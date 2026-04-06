@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
@@ -14,8 +14,21 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { EMOTIONS } from '../data/emotions';
+import { CATEGORIES } from '../data/categories';
 import { saveEntry } from '../storage';
-import { Emotion, EmotionId, MoodEntry } from '../types';
+import { Category, CategoryId, Emotion, EmotionId, MoodEntry } from '../types';
+
+async function triggerHaptic(type: 'select' | 'success' | 'light') {
+  try {
+    if (type === 'success') {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (type === 'light') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+  } catch (_) {}
+}
 
 const { width } = Dimensions.get('window');
 
@@ -37,17 +50,18 @@ function formatDate(date: Date): string {
 }
 
 export default function RecordScreen() {
-  const [selected, setSelected] = useState<EmotionId | null>(null);
+  const [selectedEmotion, setSelectedEmotion] = useState<EmotionId | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [note, setNote] = useState('');
-  const [saved, setSaved] = useState(false);
   const noteRef = useRef<TextInput>(null);
   const scaleAnims = useRef(EMOTIONS.map(() => new Animated.Value(1))).current;
+  const catScaleAnims = useRef(CATEGORIES.map(() => new Animated.Value(1))).current;
   const successAnim = useRef(new Animated.Value(0)).current;
 
-  const handleSelect = (emotion: Emotion, idx: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSelected(emotion.id);
-    setSaved(false);
+  const handleSelectEmotion = (emotion: Emotion, idx: number) => {
+    triggerHaptic('select');
+    setSelectedEmotion(emotion.id);
+    setSelectedCategory(null);
 
     Animated.sequence([
       Animated.timing(scaleAnims[idx], {
@@ -63,21 +77,40 @@ export default function RecordScreen() {
     ]).start();
   };
 
+  const handleSelectCategory = (category: Category, idx: number) => {
+    triggerHaptic('light');
+    setSelectedCategory(prev => prev === category.id ? null : category.id);
+
+    Animated.sequence([
+      Animated.timing(catScaleAnims[idx], {
+        toValue: 0.90,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.spring(catScaleAnims[idx], {
+        toValue: 1,
+        friction: 5,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   const handleSave = async () => {
-    if (!selected) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (!selectedEmotion) return;
+    triggerHaptic('success');
 
     const entry: MoodEntry = {
       id: Date.now().toString(),
-      emotionId: selected,
+      emotionId: selectedEmotion,
+      categoryId: selectedCategory ?? undefined,
       note: note.trim() || undefined,
       timestamp: Date.now(),
     };
 
     await saveEntry(entry);
-    setSelected(null);
+    setSelectedEmotion(null);
+    setSelectedCategory(null);
     setNote('');
-    setSaved(true);
 
     Animated.sequence([
       Animated.timing(successAnim, {
@@ -94,7 +127,7 @@ export default function RecordScreen() {
     ]).start();
   };
 
-  const selectedEmotion = EMOTIONS.find((e) => e.id === selected);
+  const emotion = EMOTIONS.find((e) => e.id === selectedEmotion);
 
   return (
     <KeyboardAvoidingView
@@ -105,6 +138,7 @@ export default function RecordScreen() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -115,57 +149,81 @@ export default function RecordScreen() {
 
         {/* Emotion Buttons */}
         <View style={styles.emotionsContainer}>
-          {EMOTIONS.map((emotion, idx) => {
-            const isSelected = selected === emotion.id;
+          {EMOTIONS.map((em, idx) => {
+            const isSelected = selectedEmotion === em.id;
             return (
               <Animated.View
-                key={emotion.id}
+                key={em.id}
                 style={[
                   styles.emotionWrapper,
                   { transform: [{ scale: scaleAnims[idx] }] },
                 ]}
               >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => handleSelect(emotion, idx)}
+                <Pressable
+                  onPress={() => handleSelectEmotion(em, idx)}
                   style={styles.emotionTouchable}
                 >
                   <LinearGradient
-                    colors={
-                      isSelected
-                        ? emotion.gradientColors
-                        : ['#F5F5F7', '#EBEBF0']
-                    }
+                    colors={isSelected ? em.gradientColors : ['#F5F5F7', '#EBEBF0']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[
-                      styles.emotionCard,
-                      isSelected && styles.emotionCardSelected,
-                    ]}
+                    style={[styles.emotionCard, isSelected && styles.emotionCardSelected]}
                   >
-                    <Text style={styles.emotionEmoji}>{emotion.emoji}</Text>
-                    <Text
-                      style={[
-                        styles.emotionLabel,
-                        isSelected && styles.emotionLabelSelected,
-                      ]}
-                    >
-                      {emotion.label}
+                    <Text style={styles.emotionEmoji}>{em.emoji}</Text>
+                    <Text style={[styles.emotionLabel, isSelected && styles.emotionLabelSelected]}>
+                      {em.label}
                     </Text>
-                    {isSelected && (
-                      <View style={styles.checkDot} />
-                    )}
+                    {isSelected && <View style={styles.checkDot} />}
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             );
           })}
         </View>
 
+        {/* Category Selection */}
+        {selectedEmotion && (
+          <View style={styles.categorySection}>
+            <Text style={styles.sectionLabel}>是什么影响了你？（选填）</Text>
+            <View style={styles.categoryRow}>
+              {CATEGORIES.map((cat, idx) => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <Animated.View
+                    key={cat.id}
+                    style={{ transform: [{ scale: catScaleAnims[idx] }] }}
+                  >
+                    <Pressable
+                      onPress={() => handleSelectCategory(cat, idx)}
+                      style={[
+                        styles.categoryChip,
+                        isSelected && {
+                          backgroundColor: cat.color + '22',
+                          borderColor: cat.color,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                      <Text
+                        style={[
+                          styles.categoryLabel,
+                          isSelected && { color: cat.color, fontWeight: '700' },
+                        ]}
+                      >
+                        {cat.label}
+                      </Text>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Note Input */}
-        {selected && (
-          <Animated.View style={styles.noteSection}>
-            <Text style={styles.noteLabel}>加点备注？（选填）</Text>
+        {selectedEmotion && (
+          <View style={styles.noteSection}>
+            <Text style={styles.sectionLabel}>加点备注？（选填）</Text>
             <TextInput
               ref={noteRef}
               style={styles.noteInput}
@@ -178,52 +236,46 @@ export default function RecordScreen() {
               onSubmitEditing={handleSave}
             />
             <Text style={styles.charCount}>{note.length}/80</Text>
-          </Animated.View>
+          </View>
         )}
 
         {/* Save Button */}
-        {selected && (
-          <TouchableOpacity
-            style={styles.saveButtonWrapper}
-            activeOpacity={0.85}
-            onPress={handleSave}
-          >
+        {selectedEmotion && (
+          <Pressable style={styles.saveButtonWrapper} onPress={handleSave}>
             <LinearGradient
-              colors={
-                selectedEmotion
-                  ? selectedEmotion.gradientColors
-                  : ['#667eea', '#764ba2']
-              }
+              colors={emotion ? emotion.gradientColors : ['#667eea', '#764ba2']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.saveButton}
             >
               <Text style={styles.saveButtonText}>记录这一刻 ✓</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         )}
-
-        {/* Success Toast */}
-        <Animated.View
-          style={[
-            styles.successToast,
-            {
-              opacity: successAnim,
-              transform: [
-                {
-                  translateY: successAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-          pointerEvents="none"
-        >
-          <Text style={styles.successText}>✨ 已记录！</Text>
-        </Animated.View>
       </ScrollView>
+
+      {/* Success Toast */}
+      <Animated.View
+        style={[
+          styles.successToast,
+          {
+            opacity: successAnim,
+            transform: [
+              {
+                translateY: successAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <View style={styles.successTextWrapper}>
+          <Text style={styles.successText}>✨ 已记录！</Text>
+        </View>
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 }
@@ -312,15 +364,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.8)',
     marginTop: 6,
   },
-  noteSection: {
+  categorySection: {
     marginTop: 24,
     marginBottom: 4,
   },
-  noteLabel: {
+  sectionLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#6B6B7B',
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 24,
+    backgroundColor: '#F0F0F5',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    gap: 5,
+  },
+  categoryEmoji: {
+    fontSize: 15,
+  },
+  categoryLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B6B7B',
+  },
+  noteSection: {
+    marginTop: 20,
+    marginBottom: 4,
   },
   noteInput: {
     backgroundColor: '#F0F0F5',
@@ -361,7 +441,13 @@ const styles = StyleSheet.create({
   successToast: {
     position: 'absolute',
     alignSelf: 'center',
-    bottom: 60,
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  successTextWrapper: {
     backgroundColor: '#1A1A2E',
     paddingHorizontal: 24,
     paddingVertical: 12,

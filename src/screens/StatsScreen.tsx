@@ -4,12 +4,13 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { EMOTIONS, getEmotionById } from '../data/emotions';
+import { getCategoryById } from '../data/categories';
 import {
   getAllEntries,
   getCurrentWeekStart,
@@ -121,11 +122,11 @@ export default function StatsScreen() {
 
       {/* Week Navigation */}
       <View style={styles.weekNav}>
-        <TouchableOpacity onPress={prevWeek} style={styles.navBtn}>
+        <Pressable onPress={prevWeek} style={styles.navBtn}>
           <Text style={styles.navBtnText}>‹</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={styles.weekLabel}>{formatWeekRange(weekStart)}</Text>
-        <TouchableOpacity
+        <Pressable
           onPress={nextWeek}
           style={[styles.navBtn, isCurrentWeek && styles.navBtnDisabled]}
           disabled={isCurrentWeek}
@@ -135,7 +136,7 @@ export default function StatsScreen() {
           >
             ›
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Day Pills */}
@@ -218,7 +219,7 @@ export default function StatsScreen() {
                 d.getHours()
               ).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
               return (
-                <View key={entry.id} style={styles.entryRow}>
+                  <View key={entry.id} style={styles.entryRow}>
                   <View
                     style={[
                       styles.entryDot,
@@ -228,7 +229,17 @@ export default function StatsScreen() {
                     <Text style={styles.entryEmoji}>{emotion.emoji}</Text>
                   </View>
                   <View style={styles.entryContent}>
-                    <Text style={styles.entryEmotion}>{emotion.label}</Text>
+                    <View style={styles.entryTopRow}>
+                      <Text style={styles.entryEmotion}>{emotion.label}</Text>
+                      {entry.categoryId && (() => {
+                        const cat = getCategoryById(entry.categoryId);
+                        return cat ? (
+                          <View style={[styles.entryCategoryChip, { backgroundColor: cat.color + '22' }]}>
+                            <Text style={styles.entryCategoryText}>{cat.emoji} {cat.label}</Text>
+                          </View>
+                        ) : null;
+                      })()}
+                    </View>
                     {entry.note ? (
                       <Text style={styles.entryNote}>{entry.note}</Text>
                     ) : null}
@@ -499,15 +510,31 @@ const styles = StyleSheet.create({
   entryContent: {
     flex: 1,
   },
+  entryTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   entryEmotion: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1A1A2E',
   },
+  entryCategoryChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  entryCategoryText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#3A3A52',
+  },
   entryNote: {
     fontSize: 13,
     color: '#9A9AA8',
-    marginTop: 2,
+    marginTop: 3,
   },
   entryTime: {
     fontSize: 12,
