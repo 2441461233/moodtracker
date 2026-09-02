@@ -1,0 +1,62 @@
+name: Verify and deploy MoodTracker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check types
+        run: npm run typecheck
+      - name: Test storage, dates, insights and backups
+        run: npm test
+        env:
+          TZ: Asia/Shanghai
+      - name: Build production web app
+        run: npm run build:web
+        env:
+          EXPO_NO_TELEMETRY: 1
+      - name: Verify published paths and offline behavior
+        run: npm run test:web
+      - name: Upload web artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy verified build
+        id: deployment
+        uses: actions/deploy-pages@v4

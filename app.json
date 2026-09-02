@@ -2,29 +2,33 @@
   "expo": {
     "name": "心情日记",
     "slug": "moodtracker",
-    "version": "1.0.0",
+    "version": "2.0.0",
+    "description": "一个只属于你的心情空间。记录感受、回看日历、发现生活与情绪的小关联。",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/app-icon.png",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "plugins": ["expo-font"],
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/app-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F7F8FC"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#6C63DF"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/pwa-icon.png",
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }

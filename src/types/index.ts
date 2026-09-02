@@ -25,4 +25,19 @@ export interface MoodEntry {
   categoryId?: CategoryId;
   note?: string;
   timestamp: number; // Unix ms
+  activityIds?: string[];
+  updatedAt?: number;
+}
+
+export type AppTab = 'today' | 'calendar' | 'insights' | 'settings';
+export interface AppSettings {
+  name: string;
+  theme: 'light' | 'dark' | 'system';
+  haptics: boolean;
+}
+export interface Activity {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
 }
