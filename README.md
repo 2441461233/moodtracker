@@ -4,7 +4,7 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**当前修订状态（2026-09-03 08:22 UTC）**：2.1.2 将 Apple 心境统一接入每日记录、月历 / 年像素与独立健康回顾。[2.1.2（6）原生构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/06a06295-3709-4e30-8a5e-275386a6d07d) 已完成，下载的 IPA 已通过严格验签，包含 HealthKit 与 Background Delivery；**尚未上传或分发到 TestFlight**。提交前本地 `npm run verify` 已退出 0：TypeScript、172 项回归、Web 导出与 19 项网页测试通过，共 191 项。首次网页 CI 因既有短定时器测试竞态失败；测试已改为确定性推进，172 项回归及类型检查再次通过，网页复跑待修正推送。320px / 390px 隔离合成夹具已实际点验，详见 [验收记录](design-qa.md)；夹具不是真实 HealthKit，尚未完成真机验收。下面的 2.1.1（5）发布记录只是历史证据，不能当作 2.1.2 已可更新的证明。
+**当前修订状态（2026-09-03 08:29 UTC）**：2.1.2 将 Apple 心境统一接入每日记录、月历 / 年像素与独立健康回顾。[2.1.2（6）原生构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/06a06295-3709-4e30-8a5e-275386a6d07d) 已完成，下载的 IPA 已通过严格验签，包含 HealthKit 与 Background Delivery；**尚未上传或分发到 TestFlight**。提交前本地 `npm run verify` 已退出 0：TypeScript、172 项回归、Web 导出与 19 项网页测试通过，共 191 项。首次网页 CI 因既有短定时器测试竞态失败；测试已改为确定性推进，172 项回归及类型检查再次通过，网页复跑待修正推送。320px / 390px 隔离合成夹具已实际点验，详见 [验收记录](design-qa.md)；夹具不是真实 HealthKit，尚未完成真机验收。下面的 2.1.1（5）发布记录只是历史证据，不能当作 2.1.2 已可更新的证明。
 
 ## 这一版有什么
 
@@ -91,7 +91,7 @@ npm run preview
 
 Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流模式；无服务器、数据库、支付服务或额外部署账户。
 
-另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。截至上述状态时间，[2.1.2 原生 CI](https://github.com/2441461233/moodtracker/actions/runs/33732450917) 仍在进行中；[历史 2.1.1 已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33726763418) 实际编译了 App、MoodHealth 模块、自动同步观察器和 AppDelegate subscriber。该 CI 产物不是手机安装包，也不验证后台 HealthKit 通知；历史通过记录不能作为当前 2.1.2 CI 已通过的证据。发布状态与待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
+另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[2.1.2 原生 CI](https://github.com/2441461233/moodtracker/actions/runs/33732450917) 已在同一应用源码上成功，完成于 2026-09-03 08:29:17 UTC；[历史 2.1.1 已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33726763418) 实际编译了 App、MoodHealth 模块、自动同步观察器和 AppDelegate subscriber。该 CI 产物不是手机安装包，也不验证后台 HealthKit 通知；历史通过记录不能作为当前 2.1.2 CI 已通过的证据。发布状态与待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
 
 `scripts/prepare-web.mjs` 为 Expo 的静态输出添加中文元信息、Open Graph、manifest 和 Service Worker。离线缓存仅包含公开应用资源；版本由资源内容 hash 生成，不强制刷新正在填写的草稿。已有页面可能继续使用当前缓存版本，关闭所有该站点页面再重新打开即可激活已下载的新版本。
 
