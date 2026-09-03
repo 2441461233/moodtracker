@@ -1,6 +1,6 @@
 # Apple 健康心境自动同步的边界
 
-本文描述 **2.1.2 当前修订的设计与验收边界**。`npm run verify` 已通过 172 项回归及 19 项网页测试；隔离合成夹具已验证统一时间线、来源筛选、分页、两种心境独立回顾，以及待读取 / 权限未知 / 断开后移除健康展示。夹具不是真实 HealthKit，未测真机、大字体或真实 VoiceOver。2.1.2 尚未创建构建，未签名、未上传；历史 2.1.1（5）已于 2026-09-03 07:30 UTC 核实在既有内部 TestFlight 组可用，不能把该历史证据当作 2.1.2 已上线。精确状态见 [iOS 发布与真机验收](ios-release.md)。
+本文描述 **2.1.2 当前修订的设计与验收边界**。提交前本地 `npm run verify` 已通过 172 项回归及 19 项网页测试；隔离合成夹具已验证统一时间线、来源筛选、分页、两种心境独立回顾，以及待读取 / 权限未知 / 断开后移除健康展示。夹具不是真实 HealthKit，未测真机、大字体或真实 VoiceOver。截至 2026-09-03 08:22 UTC，2.1.2（6）已完成原生构建、下载及严格 IPA 验签，尚未上传或分发；独立原生 CI 仍在进行中，首次网页 CI 的短定时器测试竞态已修正并本地 172 / 172 通过，网页复跑待推送。历史 2.1.1（5）已于 07:30 UTC 核实在既有内部 TestFlight 组可用，不能把该历史证据当作 2.1.2 已上线。精确状态见 [iOS 发布与真机验收](ios-release.md)。
 
 此功能连接 HealthKit 的 `HKStateOfMind`，不是正念分钟 `mindfulSession`，也不是诊断量表。仅限 iOS 18+ 的完整原生包；网页版、Android 和 Expo Go 不支持。用户不开启连接时，原有日记与统计完全独立。
 
@@ -20,7 +20,7 @@ Apple 不向 App 透露读取被拒绝的状态。授权请求完成只代表系
 
 当前实现的后台唤醒仅处理无数据的变更通知，不在后台保留或查询样本；数据在下次前台读取。前台运行时响应事件，回到 App 时也会补齐。Apple 控制通知频率、系统资源和后台调度，因此不承诺秒级、持续不间断或跨设备实时一致；用户彻底关闭 App 后也不能承诺持续运行。后台通知暂不可用时，前台自动同步及回到 App 补齐仍可工作。[Apple Background Delivery](<https://developer.apple.com/documentation/healthkit/hkhealthstore/enablebackgrounddelivery(for:frequency:withcompletion:)>)
 
-原生包须带 `com.apple.developer.healthkit.background-delivery=true`。现有 App Store provisioning profile `JHW9QHZK8M` 和历史 2.1.1（5）签名包均已核验包含此权限；2.1.2 未扩大权限，但包含原生查询身份与用途说明修订，仍需完整重新构建并核验新 IPA，不能仅推送 JS。模拟器构建不验证后台通知；该行为必须在真实 iPhone 验收。[Apple Background Delivery entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.healthkit.background-delivery)
+原生包须带 `com.apple.developer.healthkit.background-delivery=true`。现有 App Store provisioning profile `JHW9QHZK8M` 和历史 2.1.1（5）签名包均已核验包含此权限；2.1.2 未扩大权限，但包含原生查询身份与用途说明修订，不能仅推送 JS。当前 2.1.2（6）已完整重新构建，最终 IPA 的实际签名与内嵌 profile 均已核验 HealthKit / Background Delivery 为 `true`。签名和模拟器构建不验证后台通知；该行为仍必须在真实 iPhone 验收。[Apple Background Delivery entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.healthkit.background-delivery)
 
 ## 统一时间线、去重和回顾口径
 

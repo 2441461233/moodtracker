@@ -353,20 +353,36 @@ test('transient write failure retries automatically with the same identifier/ver
   f.sync.dispose();
 });
 
-test('retry count is bounded and disabling prevents scheduled attempts', async () => {
+test('retry count is bounded and disabling prevents scheduled attempts', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const f = fixture({ retries: [1, 1] });
+  t.after(() => f.sync.dispose());
   f.onSave(async () => {
     throw { code: 'ERR_MOOD_HEALTH_SAVE' };
   });
   await f.start();
-  await new Promise((done) => setTimeout(done, 20));
+  assert.equal(f.saves.length, 1);
+  // Each retry is scheduled after the preceding asynchronous sync completes.
+  // Advance one timer at a time instead of relying on CI wall-clock scheduling.
+  t.mock.timers.tick(1);
+  await f.sync.waitForIdle();
+  assert.equal(f.saves.length, 2);
+  t.mock.timers.tick(1);
   await f.sync.waitForIdle();
   assert.equal(f.saves.length, 3);
-  await f.sync.disable();
-  await new Promise((done) => setTimeout(done, 5));
+  t.mock.timers.tick(100);
+  await f.sync.waitForIdle();
   assert.equal(f.saves.length, 3);
+
+  // Start a new retry cycle, then disable while its next attempt is pending.
+  f.sync.retry();
+  await f.sync.waitForIdle();
+  assert.equal(f.saves.length, 4);
+  await f.sync.disable();
+  t.mock.timers.tick(100);
+  await f.sync.waitForIdle();
+  assert.equal(f.saves.length, 4);
   assert.equal(f.sync.getSnapshot().status, 'off');
-  f.sync.dispose();
 });
 
 test('rapid double-enable opens only one authorization request and still connects', async () => {
