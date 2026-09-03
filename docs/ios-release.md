@@ -28,6 +28,7 @@ Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pag
 - Apple Distribution 证书已签发：Team `9PB9F396XQ`，证书 ID `N46K339LNH`，有效至 2027-09-03；未撤销旧证书。现有 MoodJournal App ID 已启用 HealthKit。
 - App Store provisioning profile `JHW9QHZK8M`（MoodTracker AppStore HealthKit 20260903）已生成，并通过本地校验：现有 Team / Bundle ID、HealthKit entitlement、App Store 分发类型和发布证书匹配。
 - [EAS 正式 iOS 构建 a6c29f04](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/a6c29f04-396d-47ae-9ee8-c35adc40b92b) 已成功：版本 2.1.0 / build 4，源码提交 `ff6cfffaa60afd6a63e9c0e961272563f3c29670`，完成时间 2026-09-03 06:07:27 UTC，已生成签名 IPA。
+- 已下载并核验该 IPA：`codesign --verify --deep --strict` 通过，Bundle ID / Team / 版本 / build 精确匹配，签名 HealthKit 为 `true`，`get-task-allow=false`，实际 Info.plist 的 `ITSAppUsesNonExemptEncryption=false`。IPA SHA-256：`4f536c49600d8678a7f0f6cfd6b8c4d0e2139348b89242eebc0c24820e61966a`。
 - **尚未上传 TestFlight，手机暂不可更新**。下一步需要账号所有者完成 Apple 上传身份验证（App 专用密码），再上传此确切构建并加入既有内部测试组。签名构建成功也不等于真机 HealthKit 读写已验收。
 
 ## 构建与上传
@@ -52,7 +53,7 @@ simulator / production 均固定 Node.js `22.23.1` 与 EAS 镜像 `macos-sequoia
 
 EAS Submit 只负责上传二进制。仍需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，再分配到现有内部 TestFlight 组“个人测试组”。不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
 
-已设置 `ios.config.usesNonExemptEncryption=false`，并用 `expo config --type introspect` 核实生成的 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`；最终签名 IPA 仍需复核实际值。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
+已设置 `ios.config.usesNonExemptEncryption=false`，并用 `expo config --type introspect` 及最终签名 IPA 核实 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
 
 当前代码与锁定依赖未发现自定义加密、VPN 或非系统加密实现。Expo 的摘要计算使用 Apple CryptoKit，网络使用系统 URLSession；MoodHealth 使用系统 HealthKit。Apple 明确说明，仅使用 Apple 操作系统提供的加密时，无需向 App Store Connect 上传加密文档；无加密或仅使用豁免加密可将该键设为 `NO`。这不是“完全没有加密”或免除所有出口合规义务的声明；依赖、加密功能或分发要求变化时必须重新核对。[Apple 文档要求](https://developer.apple.com/help/app-store-connect/reference/app-information/export-compliance-documentation-for-encryption)、[Apple 声明规则](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations)
 
