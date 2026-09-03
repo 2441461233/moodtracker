@@ -33,7 +33,9 @@ npm run ios
 npm run android
 ```
 
-普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 EAS 登录及 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。未签名 iOS 编译已通过；签名真机包、TestFlight 上传和真实健康读写验收尚未完成。网页版部署不等于 App Store / Google Play 发布。
+普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
+
+iOS **2.1.0（4）已发布到既有内部 TestFlight 测试组**：[签名构建 a6c29f04](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/a6c29f04-396d-47ae-9ee8-c35adc40b92b) 已验签，[上传任务 4fde6ff8](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/4fde6ff8-1c27-47f0-8d95-f44fe5c0629b) 已完成。2026-09-03 06:42 UTC 在 App Store Connect 核实，既有“个人测试组”中的该构建状态为“正在测试”，原测试员仍在组内。手机可通过 **TestFlight → 情绪记录 → 更新** 安装；建议先备份，**不要卸载旧 App**。真实 iPhone 上的健康授权与读写仍需验收，不能把原生编译或签名成功视为真机验收通过。这是内部 TestFlight 发布，不是 App Store 正式上架；网页版部署也不等于 App Store / Google Play 发布。
 
 生产构建及本地验收：
 
@@ -80,7 +82,7 @@ npm run preview
 
 Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流模式；无服务器、数据库、支付服务或额外部署账户。
 
-另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33711974366) 使用 Xcode 26.3 / 模拟器 SDK 26.2，完成 MoodHealth 的 arm64 与 x86_64 编译。它不是可供手机更新的 TestFlight 构建；签名、上传和真机验收参见 [iOS 发布说明](docs/ios-release.md)。
+另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33711974366) 使用 Xcode 26.3 / 模拟器 SDK 26.2，完成 MoodHealth 的 arm64 与 x86_64 编译。该 CI 产物不是手机安装包；本轮另经 EAS 完成签名、上传及内部测试组分发，精确构建记录与仍待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
 
 `scripts/prepare-web.mjs` 为 Expo 的静态输出添加中文元信息、Open Graph、manifest 和 Service Worker。离线缓存仅包含公开应用资源；版本由资源内容 hash 生成，不强制刷新正在填写的草稿。已有页面可能继续使用当前缓存版本，关闭所有该站点页面再重新打开即可激活已下载的新版本。
 
