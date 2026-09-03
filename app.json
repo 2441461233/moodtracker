@@ -8,7 +8,17 @@
     "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "plugins": ["expo-font", ["expo-build-properties", { "ios": { "deploymentTarget": "15.1" } }]],
+    "plugins": [
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
+    ],
     "splash": {
       "image": "./assets/app-icon.png",
       "resizeMode": "contain",
@@ -39,6 +49,12 @@
       "favicon": "./assets/pwa-icon.png",
       "bundler": "metro",
       "output": "single"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "427558a5-13db-42e4-a992-8a5167b5bffe"
+      }
+    },
+    "owner": "zhen2yu"
   }
 }

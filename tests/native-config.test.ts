@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { URL } from 'node:url';
 
@@ -42,9 +43,31 @@ test('production and simulator profiles are distinct and do not embed account cr
   assert.equal(eas.build.production.autoIncrement, true);
   assert.equal(eas.cli.appVersionSource, 'remote');
   assert.equal(eas.build.simulator.ios.simulator, true);
-  assert.equal(eas.build.production.env.EXPO_PUBLIC_BASE_URL, '');
+  assert.equal(eas.build.production.env.MOODTRACKER_BUILD_TARGET, 'native');
+  assert.equal(eas.build.simulator.env.MOODTRACKER_BUILD_TARGET, 'native');
+  for (const profile of Object.values(eas.build) as { env: Record<string, string> }[]) {
+    assert.ok(Object.values(profile.env).every((value) => value.length > 0));
+  }
   assert.equal(eas.submit.production.ios.appleId, undefined);
   assert.equal(eas.submit.production.ios.ascApiKeyPath, undefined);
+});
+
+test('native EAS config cannot inherit the GitHub Pages asset prefix', () => {
+  const configure = createRequire(import.meta.url)('../app.config.js');
+  const previousTarget = process.env.MOODTRACKER_BUILD_TARGET;
+  const previousBase = process.env.EXPO_PUBLIC_BASE_URL;
+  try {
+    process.env.EXPO_PUBLIC_BASE_URL = '/moodtracker';
+    process.env.MOODTRACKER_BUILD_TARGET = 'native';
+    assert.equal(configure({ config: {} }).experiments.baseUrl, '');
+    delete process.env.MOODTRACKER_BUILD_TARGET;
+    assert.equal(configure({ config: {} }).experiments.baseUrl, '/moodtracker');
+  } finally {
+    if (previousTarget === undefined) delete process.env.MOODTRACKER_BUILD_TARGET;
+    else process.env.MOODTRACKER_BUILD_TARGET = previousTarget;
+    if (previousBase === undefined) delete process.env.EXPO_PUBLIC_BASE_URL;
+    else process.env.EXPO_PUBLIC_BASE_URL = previousBase;
+  }
 });
 
 test('normal CI test command includes the optional native bridge regression suite', () => {

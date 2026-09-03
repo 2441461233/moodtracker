@@ -33,7 +33,7 @@ npm run ios
 npm run android
 ```
 
-普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已经配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，但尚需项目所有者完成 EAS 登录、真实项目绑定和签名。网页版部署不等于 App Store / Google Play 发布。
+普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 EAS 登录及 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。未签名 iOS 编译已通过；签名真机包、TestFlight 上传和真实健康读写验收尚未完成。网页版部署不等于 App Store / Google Play 发布。
 
 生产构建及本地验收：
 
@@ -80,7 +80,7 @@ npm run preview
 
 Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流模式；无服务器、数据库、支付服务或额外部署账户。
 
-另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。它不会生成可供手机更新的 TestFlight 构建；签名、上传和真机验收参见 [iOS 发布说明](docs/ios-release.md)。
+另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33711974366) 使用 Xcode 26.3 / 模拟器 SDK 26.2，完成 MoodHealth 的 arm64 与 x86_64 编译。它不是可供手机更新的 TestFlight 构建；签名、上传和真机验收参见 [iOS 发布说明](docs/ios-release.md)。
 
 `scripts/prepare-web.mjs` 为 Expo 的静态输出添加中文元信息、Open Graph、manifest 和 Service Worker。离线缓存仅包含公开应用资源；版本由资源内容 hash 生成，不强制刷新正在填写的草稿。已有页面可能继续使用当前缓存版本，关闭所有该站点页面再重新打开即可激活已下载的新版本。
 
