@@ -4,7 +4,7 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**当前修订状态（2026-09-03 08:29 UTC）**：2.1.2 将 Apple 心境统一接入每日记录、月历 / 年像素与独立健康回顾。[2.1.2（6）原生构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/06a06295-3709-4e30-8a5e-275386a6d07d) 已完成，下载的 IPA 已通过严格验签，包含 HealthKit 与 Background Delivery；**尚未上传或分发到 TestFlight**。提交前本地 `npm run verify` 已退出 0：TypeScript、172 项回归、Web 导出与 19 项网页测试通过，共 191 项。首次网页 CI 因既有短定时器测试竞态失败；测试已改为确定性推进，172 项回归及类型检查再次通过，网页复跑待修正推送。320px / 390px 隔离合成夹具已实际点验，详见 [验收记录](design-qa.md)；夹具不是真实 HealthKit，尚未完成真机验收。下面的 2.1.1（5）发布记录只是历史证据，不能当作 2.1.2 已可更新的证明。
+**当前修订状态（2026-09-03 08:31 UTC）**：2.1.2 将 Apple 心境统一接入每日记录、月历 / 年像素与独立健康回顾。[2.1.2（6）原生构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/06a06295-3709-4e30-8a5e-275386a6d07d) 已完成，下载的 IPA 已通过严格验签，包含 HealthKit 与 Background Delivery；**尚未上传或分发到 TestFlight**。提交前本地 `npm run verify` 已退出 0：TypeScript、172 项回归、Web 导出与 19 项网页测试通过，共 191 项。首次网页 CI 因既有短定时器测试竞态失败；测试已改为确定性推进，172 项回归及类型检查再次通过，[网页复跑与部署](https://github.com/2441461233/moodtracker/actions/runs/33733731447) 已于 08:31:42 UTC 成功。320px / 390px 隔离合成夹具已实际点验，详见 [验收记录](design-qa.md)；夹具不是真实 HealthKit，尚未完成真机验收。下面的 2.1.1（5）发布记录只是历史证据，不能当作 2.1.2 已可更新的证明。
 
 ## 这一版有什么
 
