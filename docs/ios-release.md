@@ -26,7 +26,9 @@ Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pag
 - [GitHub iOS 验证 33711974366](https://github.com/2441461233/moodtracker/actions/runs/33711974366) 在提交 `145cf01032f49516e3ab9d9a4d1753f2d912868b` 上成功，耗时 9 分 55 秒。Xcode 26.3 / 模拟器 SDK 26.2 已完成 MoodHealth 的 arm64、x86_64 真实 Swift 编译和模拟器链接。
 - 所有者已明确同意继续签名托管，并要求直接发布到 TestFlight。
 - Apple Distribution 证书已签发：Team `9PB9F396XQ`，证书 ID `N46K339LNH`，有效至 2027-09-03；未撤销旧证书。现有 MoodJournal App ID 已启用 HealthKit。
-- App Store provisioning profile `JHW9QHZK8M`（MoodTracker AppStore HealthKit 20260903）已生成，并通过本地校验：现有 Team / Bundle ID、HealthKit entitlement、App Store 分发类型和发布证书匹配。**尚未生成签名真机包或上传 TestFlight**。模拟器编译成功不等于真实 HealthKit 读写、签名或手机更新已经验收。
+- App Store provisioning profile `JHW9QHZK8M`（MoodTracker AppStore HealthKit 20260903）已生成，并通过本地校验：现有 Team / Bundle ID、HealthKit entitlement、App Store 分发类型和发布证书匹配。
+- [EAS 正式 iOS 构建 a6c29f04](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/a6c29f04-396d-47ae-9ee8-c35adc40b92b) 已成功：版本 2.1.0 / build 4，源码提交 `ff6cfffaa60afd6a63e9c0e961272563f3c29670`，完成时间 2026-09-03 06:07:27 UTC，已生成签名 IPA。
+- **尚未上传 TestFlight，手机暂不可更新**。下一步需要账号所有者完成 Apple 上传身份验证（App 专用密码），再上传此确切构建并加入既有内部测试组。签名构建成功也不等于真机 HealthKit 读写已验收。
 
 ## 构建与上传
 
