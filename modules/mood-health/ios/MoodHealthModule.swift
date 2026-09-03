@@ -32,6 +32,24 @@ public final class MoodHealthModule: Module {
   public func definition() -> ModuleDefinition {
     Name("MoodHealth")
 
+    Events("onStateOfMindChange")
+
+    OnCreate {
+      guard #available(iOS 18.0, *), HKHealthStore.isHealthDataAvailable() else { return }
+      DispatchQueue.main.async { [weak self] in
+        MoodHealthObserver.shared.setEventSink { [weak self] payload in
+          self?.sendEvent("onStateOfMindChange", payload)
+        }
+      }
+    }
+
+    OnDestroy {
+      guard #available(iOS 18.0, *), HKHealthStore.isHealthDataAvailable() else { return }
+      DispatchQueue.main.async {
+        MoodHealthObserver.shared.setEventSink(nil)
+      }
+    }
+
     Function("getAvailability") { () -> [String: Any] in
       self.availability()
     }
@@ -69,10 +87,49 @@ public final class MoodHealthModule: Module {
             self.rejectHealthError(error, operation: "AUTHORIZATION", promise: promise)
             return
           }
+          if completed && read {
+            MoodHealthObserver.markReadAuthorizationRequested()
+          }
           // `completed` does not reveal read authorization, even when it is true.
           promise.resolve(["requestCompleted": completed, "writeAuthorization": self.writeAuthorization()])
         }
       }
+    }.runOnQueue(.main)
+
+    Function("getObservationStatus") { () -> [String: Any] in
+      guard #available(iOS 18.0, *), HKHealthStore.isHealthDataAvailable() else {
+        return [
+          "enabled": false,
+          "observing": false,
+          "backgroundDelivery": "unavailable",
+          "revision": 0,
+          "errorCode": "ERR_MOOD_HEALTH_UNAVAILABLE"
+        ]
+      }
+      return MoodHealthObserver.shared.status()
+    }
+
+    AsyncFunction("startObservingStateOfMind") { (promise: Promise) in
+      guard #available(iOS 18.0, *), HKHealthStore.isHealthDataAvailable() else {
+        self.rejectUnavailable(promise)
+        return
+      }
+      guard MoodHealthObserver.wasReadAuthorizationRequested else {
+        promise.reject(
+          "ERR_MOOD_HEALTH_READ_REQUEST_REQUIRED",
+          "此版本尚未记录 Apple 健康读取授权请求，请在应用中重新连接一次。"
+        )
+        return
+      }
+      MoodHealthObserver.shared.start { status in promise.resolve(status) }
+    }.runOnQueue(.main)
+
+    AsyncFunction("stopObservingStateOfMind") { (promise: Promise) in
+      guard #available(iOS 18.0, *), HKHealthStore.isHealthDataAvailable() else {
+        self.rejectUnavailable(promise)
+        return
+      }
+      MoodHealthObserver.shared.stop { status in promise.resolve(status) }
     }.runOnQueue(.main)
 
     AsyncFunction("queryStateOfMind") { (startMs: Double, endMs: Double, limit: Double, promise: Promise) in
@@ -194,14 +251,35 @@ public final class MoodHealthModule: Module {
   }
 
   private func rejectHealthError(_ error: Error, operation: String, promise: Promise) {
-    let code = (error as NSError).code
-    if (error as NSError).domain == HKErrorDomain,
-       code == HKError.Code.errorAuthorizationDenied.rawValue || code == HKError.Code.errorAuthorizationNotDetermined.rawValue {
-      promise.reject("ERR_MOOD_HEALTH_AUTHORIZATION_REQUIRED", "Apple 健康访问权限不足，请在系统健康设置中检查授权。")
-    } else {
-      // Do not log health data or include samples/metadata in error messages.
-      promise.reject("ERR_MOOD_HEALTH_\(operation)", "Apple 健康暂时无法完成此操作，请解锁设备后重试。")
+    let nsError = error as NSError
+    if nsError.domain == HKErrorDomain {
+      switch nsError.code {
+      case HKError.Code.errorAuthorizationDenied.rawValue,
+           HKError.Code.errorAuthorizationNotDetermined.rawValue,
+           HKError.Code.errorRequiredAuthorizationDenied.rawValue:
+        promise.reject("ERR_MOOD_HEALTH_AUTHORIZATION_REQUIRED", "Apple 健康访问权限不足，请在系统健康设置中检查授权。")
+        return
+      case HKError.Code.errorDatabaseInaccessible.rawValue:
+        promise.reject("ERR_MOOD_HEALTH_PROTECTED_DATA_UNAVAILABLE", "设备锁定时无法访问健康记录，请解锁后返回应用，自动同步会重试。")
+        return
+      case HKError.Code.errorHealthDataRestricted.rawValue:
+        promise.reject("ERR_MOOD_HEALTH_RESTRICTED", "此设备限制了 Apple 健康访问，请检查系统限制或设备管理设置。")
+        return
+      case HKError.Code.errorHealthDataUnavailable.rawValue:
+        self.rejectUnavailable(promise)
+        return
+      case HKError.Code.errorUserCanceled.rawValue:
+        promise.reject("ERR_MOOD_HEALTH_USER_CANCELLED", "健康授权已取消；本地记录没有改变，可在准备好后重新连接。")
+        return
+      case HKError.Code.errorInvalidArgument.rawValue:
+        promise.reject("ERR_MOOD_HEALTH_INVALID_INPUT", "Apple 健康拒绝了此记录的参数，请更新应用后重试；本地记录不会丢失。")
+        return
+      default:
+        break
+      }
     }
+    // Never include NSError's description, userInfo, samples, or metadata.
+    promise.reject("ERR_MOOD_HEALTH_\(operation)", "Apple 健康暂时无法完成此操作，本地记录已保留，稍后会重试。")
   }
 
   private func enqueueWrite(_ operation: @escaping (@escaping () -> Void) -> Void) {
@@ -324,8 +402,8 @@ public final class MoodHealthModule: Module {
               } else {
                 promise.reject("ERR_MOOD_HEALTH_SAVE_UNVERIFIED", "保存结果暂时无法核实。请保留本地记录，稍后使用同一版本重试。")
               }
-            case .failure:
-              promise.reject("ERR_MOOD_HEALTH_SAVE_UNVERIFIED", "保存结果暂时无法核实。请保留本地记录，稍后使用同一版本重试。")
+            case .failure(let error):
+              self.rejectHealthError(error, operation: "SAVE_UNVERIFIED", promise: promise)
             }
             finished()
           }

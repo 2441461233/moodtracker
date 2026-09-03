@@ -17,6 +17,23 @@ export type AuthorizationResult = {
   writeAuthorization: WriteAuthorization;
 };
 
+export type ObservationStatus = {
+  enabled: boolean;
+  observing: boolean;
+  backgroundDelivery: 'disabled' | 'enabled' | 'unavailable';
+  /** In-memory invalidation counter; it is not a HealthKit sample or cursor. */
+  revision: number;
+  errorCode?: string;
+};
+
+export type StateOfMindChangeEvent = {
+  reason: 'changed' | 'foreground' | 'error';
+  revision: number;
+  errorCode?: string;
+};
+
+export type MoodHealthSubscription = { remove(): void };
+
 export type StateOfMindSample = {
   uuid: string;
   timestamp: number;
@@ -67,6 +84,13 @@ export interface NativeMoodHealthModule {
   getAvailability(): MoodHealthAvailability;
   getWriteAuthorization(): WriteAuthorization;
   requestAuthorization(read: boolean, write: boolean): Promise<AuthorizationResult>;
+  getObservationStatus(): ObservationStatus;
+  startObservingStateOfMind(): Promise<ObservationStatus>;
+  stopObservingStateOfMind(): Promise<ObservationStatus>;
+  addListener(
+    eventName: 'onStateOfMindChange',
+    listener: (event: StateOfMindChangeEvent) => void,
+  ): MoodHealthSubscription;
   queryStateOfMind(startMs: number, endMs: number, limit: number): Promise<StateOfMindSample[]>;
   saveStateOfMind(input: SaveStateOfMindInput): Promise<{ uuid: string }>;
 }

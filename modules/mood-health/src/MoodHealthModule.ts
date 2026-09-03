@@ -13,6 +13,10 @@ export const {
   getAvailability,
   getWriteAuthorization,
   requestAuthorization,
+  getObservationStatus,
+  startObservingStateOfMind,
+  stopObservingStateOfMind,
+  addStateOfMindChangeListener,
   queryStateOfMind,
   saveStateOfMind,
 } = MoodHealth;

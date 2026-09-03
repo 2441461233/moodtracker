@@ -5,7 +5,9 @@ import {
   type AuthorizationResult,
   type MoodHealthAvailability,
   type NativeMoodHealthModule,
+  type ObservationStatus,
   type SaveStateOfMindInput,
+  type StateOfMindChangeEvent,
   type StateOfMindSample,
   type WriteAuthorization,
 } from './types';
@@ -45,6 +47,48 @@ export function createMoodHealthBridge(native: NativeMoodHealthModule | null, pl
       );
     }
     return native;
+  }
+
+  function getObservationStatus(): ObservationStatus {
+    if (!getAvailability().available || !native) {
+      return {
+        enabled: false,
+        observing: false,
+        backgroundDelivery: 'unavailable',
+        revision: 0,
+        errorCode: 'ERR_MOOD_HEALTH_UNAVAILABLE',
+      };
+    }
+    return native.getObservationStatus();
+  }
+
+  async function startObservingStateOfMind(): Promise<ObservationStatus> {
+    return requireAvailable().startObservingStateOfMind();
+  }
+
+  async function stopObservingStateOfMind(): Promise<ObservationStatus> {
+    return requireAvailable().stopObservingStateOfMind();
+  }
+
+  function addStateOfMindChangeListener(listener: (event: StateOfMindChangeEvent) => void) {
+    if (typeof listener !== 'function') invalid('请提供有效的健康情绪变更监听器。');
+    return requireAvailable().addListener('onStateOfMindChange', (event) => {
+      if (
+        !event ||
+        !['changed', 'foreground', 'error'].includes(event.reason) ||
+        !Number.isSafeInteger(event.revision) ||
+        event.revision < 0
+      )
+        return;
+      // Notifications are invalidations, never a second route for health samples.
+      const safeEvent: StateOfMindChangeEvent = { reason: event.reason, revision: event.revision };
+      if (
+        typeof event.errorCode === 'string' &&
+        /^ERR_MOOD_HEALTH_[A-Z_]{1,80}$/.test(event.errorCode)
+      )
+        safeEvent.errorCode = event.errorCode;
+      listener(safeEvent);
+    });
   }
 
   async function requestAuthorization(read: boolean, write: boolean): Promise<AuthorizationResult> {
@@ -118,6 +162,10 @@ export function createMoodHealthBridge(native: NativeMoodHealthModule | null, pl
     getAvailability,
     getWriteAuthorization,
     requestAuthorization,
+    getObservationStatus,
+    startObservingStateOfMind,
+    stopObservingStateOfMind,
+    addStateOfMindChangeListener,
     queryStateOfMind,
     saveStateOfMind,
   };

@@ -13,6 +13,7 @@ import { AppSettings, MoodEntry, EmotionId } from '../types';
 import { moodStorage } from '../storage';
 import { DEFAULT_SETTINGS } from '../storage/core';
 import { darkTheme, lightTheme, ThemeContext } from '../theme';
+import { HealthSyncProvider } from './HealthSyncContext';
 
 export interface ComposerRequest {
   emotionId?: EmotionId;
@@ -157,7 +158,9 @@ export function MoodProvider({ children }: PropsWithChildren) {
   return (
     <MoodContext.Provider value={value}>
       <ThemeContext.Provider value={isDark ? darkTheme : lightTheme}>
-        {children}
+        <HealthSyncProvider entries={entries} ready={ready && !storageError}>
+          {children}
+        </HealthSyncProvider>
       </ThemeContext.Provider>
     </MoodContext.Provider>
   );

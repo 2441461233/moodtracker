@@ -2,7 +2,7 @@
   "expo": {
     "name": "心情日记",
     "slug": "moodtracker",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "一个只属于你的心情空间。记录感受、回看日历、发现生活与情绪的小关联。",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
@@ -33,11 +33,12 @@
         "usesNonExemptEncryption": false
       },
       "entitlements": {
-        "com.apple.developer.healthkit": true
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.background-delivery": true
       },
       "infoPlist": {
-        "NSHealthShareUsageDescription": "在你选择读取时，显示 Apple 健康与正念中记录的心境，方便一起回顾。读取结果只在当前页面展示，不加入日记备份。",
-        "NSHealthUpdateUsageDescription": "在你确认写入时，将选定的心情、记录时间和可对应的活动写入 Apple 健康的心境。文字日记不会写入。"
+        "NSHealthShareUsageDescription": "在你开启自动同步并授权后，自动读取 Apple 健康与正念中的心境，收到变更或回到 App 时更新。读取结果仅在前台内存展示，不加入日记备份。",
+        "NSHealthUpdateUsageDescription": "在你开启自动同步并授权后，将近一年的本地心情以及之后新增、修改的心情、时间和对应活动自动写入 Apple 健康。文字日记不会写入。"
       }
     },
     "android": {

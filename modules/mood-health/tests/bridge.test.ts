@@ -7,6 +7,7 @@ import {
   MAX_QUERY_LIMIT,
   type NativeMoodHealthModule,
   type SaveStateOfMindInput,
+  type StateOfMindChangeEvent,
   type StateOfMindSample,
 } from '../src/types';
 
@@ -36,6 +37,25 @@ function fixture() {
       calls.authorization++;
       return { requestCompleted: true, writeAuthorization: 'denied' };
     },
+    getObservationStatus: () => ({
+      enabled: false,
+      observing: false,
+      backgroundDelivery: 'disabled',
+      revision: 0,
+    }),
+    startObservingStateOfMind: async () => ({
+      enabled: true,
+      observing: true,
+      backgroundDelivery: 'enabled',
+      revision: 0,
+    }),
+    stopObservingStateOfMind: async () => ({
+      enabled: false,
+      observing: false,
+      backgroundDelivery: 'disabled',
+      revision: 0,
+    }),
+    addListener: () => ({ remove() {} }),
     queryStateOfMind: async () => {
       calls.queries++;
       return samples;
@@ -226,4 +246,118 @@ test('native failures are not converted into successful empty reads or writes', 
   };
   await assert.rejects(bridge.saveStateOfMind(input), (error) => error === failure);
   await assert.rejects(bridge.queryStateOfMind(0, 1000, 1), (error) => error === failure);
+});
+
+test('automatic observation is explicit and never requests permissions by itself', async () => {
+  const { bridge, native, calls } = fixture();
+  let starts = 0;
+  let stops = 0;
+  const enabled = {
+    enabled: true,
+    observing: true,
+    backgroundDelivery: 'enabled' as const,
+    revision: 3,
+  };
+  native.startObservingStateOfMind = async () => {
+    starts++;
+    return enabled;
+  };
+  native.stopObservingStateOfMind = async () => {
+    stops++;
+    return { ...enabled, enabled: false, observing: false, backgroundDelivery: 'disabled' };
+  };
+  assert.equal(bridge.getObservationStatus().enabled, false);
+  assert.equal(starts, 0);
+  assert.equal(stops, 0);
+  assert.deepEqual(await bridge.startObservingStateOfMind(), enabled);
+  assert.equal((await bridge.stopObservingStateOfMind()).enabled, false);
+  assert.deepEqual({ starts, stops }, { starts: 1, stops: 1 });
+  assert.deepEqual(calls, { authorization: 0, queries: 0, writes: [] });
+});
+
+test('background delivery failure does not falsely disable working foreground observation', async () => {
+  const { bridge, native } = fixture();
+  const status = {
+    enabled: true,
+    observing: true,
+    backgroundDelivery: 'unavailable' as const,
+    revision: 0,
+    errorCode: 'ERR_MOOD_HEALTH_BACKGROUND_DELIVERY',
+  };
+  native.startObservingStateOfMind = async () => status;
+  assert.deepEqual(await bridge.startObservingStateOfMind(), status);
+});
+
+test('first connection read-request guard is actionable and not retried as silent authorization', async () => {
+  const { bridge, native, calls } = fixture();
+  const failure = Object.assign(new Error('Reconnect once'), {
+    code: 'ERR_MOOD_HEALTH_READ_REQUEST_REQUIRED',
+  });
+  native.startObservingStateOfMind = async () => {
+    throw failure;
+  };
+  await assert.rejects(bridge.startObservingStateOfMind(), (error) => error === failure);
+  assert.equal(calls.authorization, 0);
+});
+
+test('observation on unsupported binaries stays unavailable without touching native operations', async () => {
+  for (const platform of ['web', 'android', 'ios']) {
+    const bridge = createMoodHealthBridge(null, platform);
+    assert.deepEqual(bridge.getObservationStatus(), {
+      enabled: false,
+      observing: false,
+      backgroundDelivery: 'unavailable',
+      revision: 0,
+      errorCode: 'ERR_MOOD_HEALTH_UNAVAILABLE',
+    });
+    await assert.rejects(bridge.startObservingStateOfMind(), {
+      code: 'ERR_MOOD_HEALTH_UNAVAILABLE',
+    });
+    await assert.rejects(bridge.stopObservingStateOfMind(), {
+      code: 'ERR_MOOD_HEALTH_UNAVAILABLE',
+    });
+    assert.throws(() => bridge.addStateOfMindChangeListener(() => {}), {
+      code: 'ERR_MOOD_HEALTH_UNAVAILABLE',
+    });
+  }
+});
+
+test('state-of-mind notifications carry only safe invalidations and unsubscribe cleanly', () => {
+  const { bridge, native, calls } = fixture();
+  let callback: ((event: StateOfMindChangeEvent) => void) | undefined;
+  let removed = false;
+  native.addListener = (name, listener) => {
+    assert.equal(name, 'onStateOfMindChange');
+    callback = listener;
+    return {
+      remove: () => {
+        removed = true;
+        callback = undefined;
+      },
+    };
+  };
+  const received: StateOfMindChangeEvent[] = [];
+  const subscription = bridge.addStateOfMindChangeListener((event) => received.push(event));
+  assert.ok(callback);
+  callback({ reason: 'changed', revision: 1, sample: { note: 'never forward' } } as never);
+  callback({ reason: 'foreground', revision: 2 });
+  callback({
+    reason: 'error',
+    revision: 3,
+    errorCode: 'ERR_MOOD_HEALTH_PROTECTED_DATA_UNAVAILABLE',
+  });
+  callback({ reason: 'error', revision: 4, errorCode: 'An error containing arbitrary metadata' });
+  callback({ reason: 'unknown', revision: 5 } as never);
+  callback({ reason: 'changed', revision: NaN });
+  assert.deepEqual(received, [
+    { reason: 'changed', revision: 1 },
+    { reason: 'foreground', revision: 2 },
+    { reason: 'error', revision: 3, errorCode: 'ERR_MOOD_HEALTH_PROTECTED_DATA_UNAVAILABLE' },
+    { reason: 'error', revision: 4 },
+  ]);
+  subscription.remove();
+  assert.equal(removed, true);
+  assert.equal(callback, undefined);
+  assert.deepEqual(calls, { authorization: 0, queries: 0, writes: [] });
+  assert.throws(() => bridge.addStateOfMindChangeListener(null as never), invalidCode);
 });

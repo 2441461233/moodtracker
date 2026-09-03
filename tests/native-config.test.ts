@@ -23,9 +23,12 @@ test('native release retains the verified existing app, team and version identit
 });
 
 test('HealthKit capability is scoped and both explicit permission purposes are present', () => {
-  assert.deepEqual(app.ios.entitlements, { 'com.apple.developer.healthkit': true });
-  assert.match(app.ios.infoPlist.NSHealthShareUsageDescription, /选择读取/);
-  assert.match(app.ios.infoPlist.NSHealthUpdateUsageDescription, /确认写入/);
+  assert.deepEqual(app.ios.entitlements, {
+    'com.apple.developer.healthkit': true,
+    'com.apple.developer.healthkit.background-delivery': true,
+  });
+  assert.match(app.ios.infoPlist.NSHealthShareUsageDescription, /开启自动同步并授权/);
+  assert.match(app.ios.infoPlist.NSHealthUpdateUsageDescription, /开启自动同步并授权/);
   assert.match(app.ios.infoPlist.NSHealthUpdateUsageDescription, /文字日记不会写入/);
   assert.equal(app.ios.infoPlist.UIBackgroundModes, undefined);
   assert.equal(app.ios.infoPlist.NSHealthClinicalHealthRecordsShareUsageDescription, undefined);
@@ -34,6 +37,7 @@ test('HealthKit capability is scoped and both explicit permission purposes are p
 test('the local module is registered for Apple without raising journal minimum to iOS 18', () => {
   assert.deepEqual(moduleConfig.platforms, ['apple']);
   assert.deepEqual(moduleConfig.apple.modules, ['MoodHealthModule']);
+  assert.deepEqual(moduleConfig.apple.appDelegateSubscribers, ['MoodHealthAppDelegateSubscriber']);
   const properties = app.plugins.find(
     (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-build-properties',
   );

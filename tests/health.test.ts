@@ -6,6 +6,7 @@ import {
   HEALTH_EXPORT_STORAGE_KEY,
   selectEntriesForHealth,
   toHealthSample,
+  toSafeHealthError,
   type HealthSampleInput,
   type HealthSyncStorage,
 } from '../src/health/core';
@@ -15,6 +16,10 @@ import type { MoodEntry } from '../src/types';
 // request HealthKit permission, read real health data or exercise the native SDK.
 const NOW = Date.UTC(2026, 0, 1, 12);
 const DAY = 24 * 60 * 60 * 1000;
+const UNKNOWN_FAILURE = {
+  firstErrorCode: 'ERR_MOOD_HEALTH_UNKNOWN',
+  firstErrorMessage: 'Apple 健康操作暂未完成。请解锁设备后重试；本地记录已保留。',
+};
 const createHealthExporter = (
   storage: HealthSyncStorage,
   save: (sample: HealthSampleInput) => Promise<{ uuid: string }>,
@@ -326,7 +331,12 @@ describe('durable and idempotent HealthKit export coordination', () => {
       if (fail) throw new Error('permission denied');
       return { uuid: 'fake-retry' };
     });
-    assert.deepEqual(await exporter.exportEntries([entry()]), { saved: 0, skipped: 0, failed: 1 });
+    assert.deepEqual(await exporter.exportEntries([entry()]), {
+      saved: 0,
+      skipped: 0,
+      failed: 1,
+      ...UNKNOWN_FAILURE,
+    });
     assert.equal(records(storage)['moodtracker:one'].acknowledged, false);
     fail = false;
     assert.deepEqual(await exporter.exportEntries([entry()]), { saved: 1, skipped: 0, failed: 0 });
@@ -360,7 +370,12 @@ describe('durable and idempotent HealthKit export coordination', () => {
       return response;
     });
     const batch = [entry('first'), entry('failed'), entry('last')];
-    assert.deepEqual(await exporter.exportEntries(batch), { saved: 2, skipped: 0, failed: 1 });
+    assert.deepEqual(await exporter.exportEntries(batch), {
+      saved: 2,
+      skipped: 0,
+      failed: 1,
+      ...UNKNOWN_FAILURE,
+    });
     assert.equal(native.calls.length, 3);
     fail = false;
     assert.deepEqual(await exporter.exportEntries(batch), { saved: 1, skipped: 2, failed: 0 });
@@ -376,6 +391,7 @@ describe('durable and idempotent HealthKit export coordination', () => {
         saved: 0,
         skipped: 0,
         failed: 1,
+        ...UNKNOWN_FAILURE,
       });
       assert.equal(records(storage)['moodtracker:one'].acknowledged, false);
     }
@@ -447,6 +463,162 @@ describe('durable and idempotent HealthKit export coordination', () => {
     assert.equal(native.calls.length, 10000);
     assert.equal(storage.writes.length, 2);
     assert.equal(Object.keys(records(storage)).length, 10000);
+  });
+});
+
+describe('safe actionable HealthKit errors', () => {
+  test('known codes produce fixed action messages without exposing native details', () => {
+    const codes = [
+      'ERR_MOOD_HEALTH_AUTHORIZATION_REQUIRED',
+      'ERR_MOOD_HEALTH_READ_REQUEST_REQUIRED',
+      'ERR_MOOD_HEALTH_AUTHORIZATION',
+      'ERR_MOOD_HEALTH_QUERY',
+      'ERR_MOOD_HEALTH_SAVE',
+      'ERR_MOOD_HEALTH_SAVE_UNVERIFIED',
+      'ERR_MOOD_HEALTH_SYNC_CONFLICT',
+      'ERR_MOOD_HEALTH_CONFIGURATION',
+      'ERR_MOOD_HEALTH_UNAVAILABLE',
+      'ERR_MOOD_HEALTH_BACKGROUND_DELIVERY',
+      'ERR_MOOD_HEALTH_INVALID_INPUT',
+    ];
+    for (const code of codes) {
+      const sensitive = Object.assign(new Error('private health sample, source and diary note'), {
+        code,
+        sample: { uuid: 'private-uuid', valence: -0.5 },
+      });
+      const safe = toSafeHealthError(sensitive);
+      assert.equal(safe.code, code);
+      assert.ok(safe.message.length > 0);
+      assert.equal(safe.message, toSafeHealthError({ code, message: 'different text' }).message);
+      assert.deepEqual(Object.keys(safe), ['code', 'message']);
+      assert.ok(!JSON.stringify(safe).includes('private'));
+    }
+    assert.match(toSafeHealthError({ code: codes[0] }).message, /权限/);
+    assert.match(toSafeHealthError({ code: codes[4] }).message, /解锁/);
+    assert.match(toSafeHealthError({ code: codes[6] }).message, /版本冲突/);
+    assert.match(toSafeHealthError({ code: codes[7] }).message, /更新应用/);
+  });
+
+  test('unknown, malformed, sensitive, and throwing codes normalize without leaks', () => {
+    const unknown = {
+      code: UNKNOWN_FAILURE.firstErrorCode,
+      message: UNKNOWN_FAILURE.firstErrorMessage,
+    };
+    for (const error of [
+      undefined,
+      null,
+      'private sample text',
+      42,
+      new Error('private message'),
+      { code: 'ERR_MOOD_HEALTH_PATIENT_PRIVATE_INFORMATION' },
+      { code: 'ERR_MOOD_HEALTH_SAVE\nprivate note' },
+      { code: `ERR_MOOD_HEALTH_${'A'.repeat(65)}` },
+      { code: 'ERR_MOOD_HEALTH_save' },
+      { code: 'HKErrorAuthorizationDenied' },
+      { code: ['ERR_MOOD_HEALTH_SAVE'] },
+      { code: { toString: () => 'ERR_MOOD_HEALTH_SAVE' } },
+      {
+        get code() {
+          throw new Error('private getter data');
+        },
+      },
+    ])
+      assert.deepEqual(toSafeHealthError(error), unknown);
+  });
+
+  test('a batch reports only its first sanitized failure and keeps successful acknowledgements', async () => {
+    const storage = new MemoryStorage();
+    const exporter = createHealthExporter(storage, async (sample) => {
+      if (sample.syncIdentifier === 'moodtracker:success') return { uuid: 'saved' };
+      throw Object.assign(new Error('private health payload'), {
+        code:
+          sample.syncIdentifier === 'moodtracker:first'
+            ? 'ERR_MOOD_HEALTH_AUTHORIZATION_REQUIRED'
+            : 'ERR_MOOD_HEALTH_SYNC_CONFLICT',
+      });
+    });
+    const result = await exporter.exportEntries([
+      entry('first'),
+      entry('second'),
+      entry('success'),
+    ]);
+    assert.equal(result.saved, 1);
+    assert.equal(result.failed, 2);
+    assert.equal(result.firstErrorCode, 'ERR_MOOD_HEALTH_AUTHORIZATION_REQUIRED');
+    assert.match(result.firstErrorMessage!, /权限/);
+    assert.ok(!JSON.stringify(result).includes('private'));
+    assert.equal(records(storage)['moodtracker:success'].acknowledged, true);
+    assert.equal(records(storage)['moodtracker:first'].acknowledged, false);
+  });
+});
+
+describe('cancellable automatic HealthKit batches', () => {
+  test('an already aborted request does not read, reserve, or save anything', async () => {
+    const storage = new MemoryStorage();
+    const native = recorder();
+    const controller = new AbortController();
+    controller.abort();
+    assert.deepEqual(
+      await createHealthExporter(storage, native.save).exportEntries([entry()], {
+        signal: controller.signal,
+      }),
+      { saved: 0, skipped: 0, failed: 0 },
+    );
+    assert.equal(storage.reads, 0);
+    assert.equal(storage.writes.length, 0);
+    assert.equal(native.calls.length, 0);
+  });
+
+  test('mid-batch abort acknowledges the active save and leaves unattempted versions safely pending', async () => {
+    const storage = new MemoryStorage();
+    const native = recorder();
+    const controller = new AbortController();
+    const exporter = createHealthExporter(storage, async (sample) => {
+      const response = await native.save(sample);
+      if (native.calls.length === 1) controller.abort();
+      return response;
+    });
+    const batch = [entry('first'), entry('second'), entry('third')];
+    assert.deepEqual(await exporter.exportEntries(batch, { signal: controller.signal }), {
+      saved: 1,
+      skipped: 0,
+      failed: 0,
+    });
+    assert.equal(native.calls.length, 1);
+    const reserved = records(storage);
+    assert.equal(reserved['moodtracker:first'].acknowledged, true);
+    assert.equal(reserved['moodtracker:second'].acknowledged, false);
+    assert.equal(reserved['moodtracker:third'].acknowledged, false);
+    assert.deepEqual(await exporter.exportEntries(batch), { saved: 2, skipped: 1, failed: 0 });
+    assert.deepEqual(
+      native.calls.map((sample) => sample.syncIdentifier),
+      ['moodtracker:first', 'moodtracker:second', 'moodtracker:third'],
+    );
+    assert.equal(native.calls[1].syncVersion, reserved['moodtracker:second'].version);
+    assert.equal(native.calls[2].syncVersion, reserved['moodtracker:third'].version);
+  });
+
+  test('a queued batch aborted before it starts never reserves its snapshot', async () => {
+    const storage = new MemoryStorage();
+    const native = recorder();
+    const started = deferred();
+    const release = deferred();
+    const exporter = createHealthExporter(storage, async (sample) => {
+      started.resolve();
+      await release.promise;
+      return native.save(sample);
+    });
+    const active = exporter.exportEntries([entry('active')]);
+    await started.promise;
+    const controller = new AbortController();
+    const queued = exporter.exportEntries([entry('obsolete')], { signal: controller.signal });
+    controller.abort();
+    release.resolve();
+    await active;
+    assert.deepEqual(await queued, { saved: 0, skipped: 0, failed: 0 });
+    assert.equal(native.calls.length, 1);
+    assert.equal(storage.reads, 1);
+    assert.equal(records(storage)['moodtracker:obsolete'], undefined);
   });
 });
 

@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useMood } from '../context/MoodContext';
+import { useHealthSync } from '../context/HealthSyncContext';
 import { Card, EmptyState, Icon, Label, MoodIcon, SectionTitle, Button } from '../components/ui';
 import { Page } from '../components/Page';
 import { EntryList } from '../components/EntryList';
+import { AppleHealthSummary } from '../components/AppleHealthSummary';
 import { addDays, dayKey, formatDate, getGreeting, startOfWeek, WEEKDAYS } from '../lib/dates';
 import { currentStreak, dailyAverage, entriesInRange, groupByDay } from '../lib/insights';
 import { MOOD_APPEARANCE, useLayout, useTheme } from '../theme';
@@ -12,6 +14,7 @@ import { EmotionId } from '../types';
 
 export default function TodayScreen() {
   const { entries, settings, now, openComposer, openDetail, setBreathing } = useMood();
+  const { enabled: healthSyncEnabled } = useHealthSync();
   const theme = useTheme();
   const { desktop, compact, width } = useLayout();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
@@ -116,7 +119,9 @@ export default function TodayScreen() {
             >
               <Icon name="lock-outline" size={13} color={theme.muted} />
               <Label muted style={{ fontSize: 11, flex: 1 }}>
-                只属于你的心情，留在这台设备。
+                {healthSyncEnabled
+                  ? '文字笔记留在本地，心情自动同步到 Apple 健康。'
+                  : '只属于你的心情，留在这台设备。'}
               </Label>
             </View>
           </Card>
@@ -208,6 +213,7 @@ export default function TodayScreen() {
           </View>
         </View>
         <View style={{ flex: desktop ? 1 : undefined, gap: 24, minWidth: 0 }}>
+          <AppleHealthSummary />
           <Card>
             <View
               style={{

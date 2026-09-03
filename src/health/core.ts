@@ -25,6 +25,66 @@ export interface HealthExportResult {
   saved: number;
   skipped: number;
   failed: number;
+  firstErrorCode?: string;
+  firstErrorMessage?: string;
+}
+
+export interface HealthExportOptions {
+  /** Stops further samples, not a HealthKit write that has already started. */
+  signal?: AbortSignal;
+}
+
+const SAFE_HEALTH_MESSAGES: Record<string, string> = {
+  ERR_MOOD_HEALTH_AUTHORIZATION_IN_PROGRESS:
+    '健康授权窗口已经打开，请先完成当前授权；本地记录已保留。',
+  ERR_MOOD_HEALTH_UNSUPPORTED_KIND:
+    '发现当前版本尚不支持的 Apple 心境类型，请更新应用；原始数据未被修改。',
+  ERR_MOOD_HEALTH_PROTECTED_DATA_UNAVAILABLE:
+    '设备锁定时 Apple 健康数据暂不可用。请解锁并回到 App，系统会自动重试；本地记录已保留。',
+  ERR_MOOD_HEALTH_RESTRICTED:
+    '系统限制了 Apple 健康访问。请检查设备的健康权限或管理限制；本地日记仍可正常使用。',
+  ERR_MOOD_HEALTH_USER_CANCELLED: '健康授权已取消。需要同步时，请重新开启连接并完成系统授权。',
+  ERR_MOOD_HEALTH_OBSERVER:
+    'Apple 健康变更通知暂时中断。回到 App 会重新连接，也可以点重新连接恢复。',
+  ERR_MOOD_HEALTH_AUTHORIZATION_REQUIRED:
+    'Apple 健康访问权限不足。请在健康 App 中检查本应用的心境权限；本地记录已保留。',
+  ERR_MOOD_HEALTH_READ_REQUEST_REQUIRED:
+    '请先完成 Apple 健康心境读取的授权步骤，再恢复自动同步；本地记录已保留。',
+  ERR_MOOD_HEALTH_AUTHORIZATION: 'Apple 健康授权未完成。请解锁设备后重新开启连接；本地记录已保留。',
+  ERR_MOOD_HEALTH_QUERY: '暂时无法读取 Apple 健康心境。请解锁设备并回到应用后重试。',
+  ERR_MOOD_HEALTH_SAVE:
+    'Apple 健康暂时无法保存心境。请解锁设备并回到应用，未完成的记录可安全重试。',
+  ERR_MOOD_HEALTH_SAVE_UNVERIFIED:
+    'Apple 健康保存结果暂未确认。请保留本地记录并解锁设备，重试不会重复新增同一版本。',
+  ERR_MOOD_HEALTH_SYNC_CONFLICT:
+    'Apple 健康中存在更新版本或版本冲突。请保留本地记录；需要核对同步状态后再重试。',
+  ERR_MOOD_HEALTH_CONFIGURATION:
+    '此版本的 Apple 健康配置不完整，请更新应用后重试；本地记录不受影响。',
+  ERR_MOOD_HEALTH_UNAVAILABLE:
+    '此设备暂不支持心境连接。请使用包含健康功能的 iOS 18 或更新版本应用。',
+  ERR_MOOD_HEALTH_BACKGROUND_DELIVERY:
+    'Apple 健康后台更新暂未启用。回到应用仍可同步，请稍后重新开启连接。',
+  ERR_MOOD_HEALTH_INVALID_INPUT:
+    '有记录的时间或同步内容无法处理。请检查记录后重试；原始日记已保留。',
+  ERR_MOOD_HEALTH_UNKNOWN: 'Apple 健康操作暂未完成。请解锁设备后重试；本地记录已保留。',
+};
+
+/** Never expose a native error message: it may contain health data or metadata. */
+export function toSafeHealthError(error: unknown): { code: string; message: string } {
+  let candidate: unknown;
+  try {
+    candidate = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+  } catch {
+    // Even an unexpected native error getter must not interrupt acknowledgement.
+    candidate = undefined;
+  }
+  const code =
+    typeof candidate === 'string' &&
+    /^ERR_MOOD_HEALTH_[A-Z0-9_]{1,64}$/.test(candidate) &&
+    Object.prototype.hasOwnProperty.call(SAFE_HEALTH_MESSAGES, candidate)
+      ? candidate
+      : 'ERR_MOOD_HEALTH_UNKNOWN';
+  return { code, message: SAFE_HEALTH_MESSAGES[code] };
 }
 
 // This is an explicit approximation of the journal's five existing levels,
@@ -259,8 +319,12 @@ export function createHealthExporter(
     }
   }
 
-  async function run(samples: HealthSampleInput[]): Promise<HealthExportResult> {
+  async function run(
+    samples: HealthSampleInput[],
+    options: HealthExportOptions,
+  ): Promise<HealthExportResult> {
     const result: HealthExportResult = { saved: 0, skipped: 0, failed: 0 };
+    if (options.signal?.aborted) return result;
     const ledger = await read();
     const pending: Array<{ sample: HealthSampleInput; fingerprint: string }> = [];
     let reservationsChanged = false;
@@ -288,14 +352,22 @@ export function createHealthExporter(
     // idempotent retries, without rewriting a growing ledger for every sample.
     if (reservationsChanged) await persist(ledger);
     for (const item of pending) {
+      // A disconnect or superseding snapshot must not start any more writes.
+      // Reserved but unattempted records remain pending for an idempotent retry.
+      if (options.signal?.aborted) break;
       // Never pass our queued payload object directly to an external implementation.
       const sample = { ...item.sample, associations: [...item.sample.associations] };
       try {
         const response = await save(sample);
         if (!response || typeof response.uuid !== 'string' || !response.uuid.trim())
           throw new Error('Apple 健康未确认保存。');
-      } catch {
+      } catch (error) {
         result.failed++;
+        if (!result.firstErrorCode) {
+          const safe = toSafeHealthError(error);
+          result.firstErrorCode = safe.code;
+          result.firstErrorMessage = safe.message;
+        }
         continue;
       }
       ledger.set(item.sample.syncIdentifier, {
@@ -314,7 +386,10 @@ export function createHealthExporter(
   }
 
   return {
-    exportEntries(entries: MoodEntry[]): Promise<HealthExportResult> {
+    exportEntries(
+      entries: MoodEntry[],
+      options: HealthExportOptions = {},
+    ): Promise<HealthExportResult> {
       let samples: HealthSampleInput[];
       try {
         const now = checkedClock();
@@ -327,7 +402,9 @@ export function createHealthExporter(
       } catch (error) {
         return Promise.reject(error);
       }
-      const operation = () => run(samples);
+      // Snapshot options as well as inputs; only the signal's abort state changes.
+      const signal = options.signal;
+      const operation = () => run(samples, { signal });
       const result = queue.then(operation, operation);
       queue = result.catch(() => undefined);
       return result;
