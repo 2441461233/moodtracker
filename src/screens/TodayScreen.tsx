@@ -2,29 +2,37 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useMood } from '../context/MoodContext';
-import { useHealthSync } from '../context/HealthSyncContext';
+import { useTimeline } from '../health/useTimeline';
+import {
+  groupTimelineByDay,
+  timelineDailyAverage,
+  timelineDayScore,
+  timelineInRange,
+} from '../health/timeline';
 import { Card, EmptyState, Icon, Label, MoodIcon, SectionTitle, Button } from '../components/ui';
 import { Page } from '../components/Page';
-import { EntryList } from '../components/EntryList';
-import { AppleHealthSummary } from '../components/AppleHealthSummary';
+import { TimelineList } from '../components/TimelineList';
+import { HealthTimelineNotice } from '../components/HealthTimelineNotice';
 import { addDays, dayKey, formatDate, getGreeting, startOfWeek, WEEKDAYS } from '../lib/dates';
-import { currentStreak, dailyAverage, entriesInRange, groupByDay } from '../lib/insights';
+import { currentStreak, emotionForScore } from '../lib/insights';
 import { MOOD_APPEARANCE, useLayout, useTheme } from '../theme';
 import { EmotionId } from '../types';
 
 export default function TodayScreen() {
   const { entries, settings, now, openComposer, openDetail, setBreathing } = useMood();
-  const { enabled: healthSyncEnabled } = useHealthSync();
+  const { records, health } = useTimeline();
   const theme = useTheme();
   const { desktop, compact, width } = useLayout();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [selected, setSelected] = useState<string | null>(null);
   const selectedKey = selected ?? dayKey(now);
   const weekStart = startOfWeek(now);
-  const weekEntries = entriesInRange(entries, weekStart, addDays(weekStart, 7));
-  const weekGroups = groupByDay(weekEntries);
-  const selectedEntries = entries.filter((entry) => dayKey(entry.timestamp) === selectedKey);
-  const average = dailyAverage(weekEntries);
+  const weekRecords = timelineInRange(records, weekStart, addDays(weekStart, 7));
+  const weekGroups = groupTimelineByDay(weekRecords);
+  const selectedRecords = records.filter((record) => dayKey(record.timestamp) === selectedKey);
+  const selectedAppleCount = selectedRecords.filter((record) => record.type === 'apple').length;
+  const weekAppleCount = weekRecords.filter((record) => record.type === 'apple').length;
+  const average = timelineDailyAverage(weekRecords);
   const streak = currentStreak(entries, now);
   const ids = Object.keys(MOOD_APPEARANCE) as EmotionId[];
   return (
@@ -119,8 +127,8 @@ export default function TodayScreen() {
             >
               <Icon name="lock-outline" size={13} color={theme.muted} />
               <Label muted style={{ fontSize: 11, flex: 1 }}>
-                {healthSyncEnabled
-                  ? '文字笔记留在本地，心情自动同步到 Apple 健康。'
+                {health.enabled
+                  ? '已连接 Apple 健康，文字笔记仍留在本地。'
                   : '只属于你的心情，留在这台设备。'}
               </Label>
             </View>
@@ -136,14 +144,18 @@ export default function TodayScreen() {
                 const date = addDays(weekStart, index);
                 const key = dayKey(date);
                 const active = key === selectedKey;
-                const dayEntries = weekGroups.get(key) ?? [];
+                const dayRecords = weekGroups.get(key) ?? [];
                 const future = key > dayKey(now);
-                const last = [...dayEntries].sort((a, b) => b.timestamp - a.timestamp)[0];
+                const last = [...dayRecords].sort((a, b) => b.timestamp - a.timestamp)[0];
+                const dayMood = health.enabled
+                  ? emotionForScore(timelineDayScore(dayRecords))
+                  : (last?.emotionId ?? null);
+                const appleCount = dayRecords.filter((record) => record.type === 'apple').length;
                 return (
                   <Pressable
                     key={key}
                     accessibilityRole="button"
-                    accessibilityLabel={`${formatDate(date)}，${dayEntries.length} 条记录`}
+                    accessibilityLabel={`${formatDate(date)}，${dayRecords.length} 条记录${appleCount ? `，含 ${appleCount} 条 Apple 心境` : ''}`}
                     accessibilityState={{ selected: active, disabled: future }}
                     disabled={future}
                     onPress={() => setSelected(key)}
@@ -179,8 +191,8 @@ export default function TodayScreen() {
                         borderRadius: 3,
                         backgroundColor: active
                           ? theme.surface
-                          : last
-                            ? MOOD_APPEARANCE[last.emotionId].color
+                          : dayMood
+                            ? MOOD_APPEARANCE[dayMood].color
                             : theme.border,
                       }}
                     />
@@ -190,21 +202,32 @@ export default function TodayScreen() {
             </View>
           </Card>
           <View>
+            {health.enabled && <HealthTimelineNotice />}
             <SectionTitle
               title={
                 selectedKey === dayKey(now)
                   ? '今天的心情足迹'
                   : `${Number(selectedKey.slice(5, 7))}月${Number(selectedKey.slice(8))}日的心情足迹`
               }
-              subtitle={`${selectedEntries.length} 个被好好记住的瞬间`}
+              subtitle={
+                health.enabled && !health.hasRead
+                  ? `${selectedRecords.length} 条本地记录 · Apple 心境待载入`
+                  : selectedAppleCount
+                    ? `${selectedRecords.length - selectedAppleCount} 条本地日记 · ${selectedAppleCount} 条 Apple 心境（只读）`
+                    : `${selectedRecords.length} 个被好好记住的瞬间`
+              }
             />
-            {selectedEntries.length ? (
-              <EntryList entries={selectedEntries} onPress={openDetail} />
+            {selectedRecords.length ? (
+              <TimelineList key={selectedKey} records={selectedRecords} onPressLocal={openDetail} />
             ) : (
               <Card style={{ padding: 8 }}>
                 <EmptyState
-                  title="故事，从这一刻开始"
-                  description="开心、平淡或有点累，都可以留在这里。你的第一条记录，不需要很特别。"
+                  title={health.enabled ? '这一天暂无已载入记录' : '故事，从这一刻开始'}
+                  description={
+                    health.enabled
+                      ? 'Apple 心境是否已读取请以上方连接状态为准。你也可以留下一条本地心情记录。'
+                      : '开心、平淡或有点累，都可以留在这里。你的第一条记录，不需要很特别。'
+                  }
                   action="记下这一刻"
                   onAction={() => openComposer({ date: new Date(`${selectedKey}T12:00:00`) })}
                 />
@@ -213,7 +236,6 @@ export default function TodayScreen() {
           </View>
         </View>
         <View style={{ flex: desktop ? 1 : undefined, gap: 24, minWidth: 0 }}>
-          <AppleHealthSummary />
           <Card>
             <View
               style={{
@@ -284,10 +306,16 @@ export default function TodayScreen() {
               ))}
             </View>
             <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
-              {weekEntries.length
-                ? `已经留下 ${weekEntries.length} 个瞬间。记录不必完美，真实就好。`
+              {weekRecords.length
+                ? `已经留下 ${weekRecords.length} 个瞬间${weekAppleCount ? `，含 ${weekAppleCount} 条 Apple 心境` : ''}。记录不必完美，真实就好。`
                 : '不赶进度，不追求满分。每一次记录，都在更靠近自己。'}
             </Label>
+            {weekAppleCount > 0 && (
+              <Label muted style={{ fontSize: 10, lineHeight: 19, marginTop: 9 }}>
+                Apple 愉悦度近似映射到 1–5
+                档用于展示。一天有“整体心情”时优先采用其均值，否则采用当下情绪均值；各记录日等权。
+              </Label>
+            )}
             <Button
               kind="ghost"
               onPress={() => navigation.navigate('insights')}
@@ -331,7 +359,11 @@ export default function TodayScreen() {
             <Icon name="sprout-outline" color={theme.green} size={26} />
             <View style={{ flex: 1, gap: 5 }}>
               <Label style={{ fontSize: 13, fontWeight: '600' }}>
-                {streak > 0 ? `已连续关照自己 ${streak} 天` : '慢慢来，也在向前'}
+                {streak > 0
+                  ? health.enabled
+                    ? `已连续记录本地心情 ${streak} 天`
+                    : `已连续关照自己 ${streak} 天`
+                  : '慢慢来，也在向前'}
               </Label>
               <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
                 偶尔忘记也没关系。{desktop ? '\n' : ''}这里一直为你留着一个位置。

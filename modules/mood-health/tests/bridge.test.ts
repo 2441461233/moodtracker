@@ -5,6 +5,8 @@ import {
   HEALTH_ASSOCIATIONS,
   MAX_QUERY_DAYS,
   MAX_QUERY_LIMIT,
+  MAX_LOCAL_ENTRY_ID_LENGTH,
+  MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
   type NativeMoodHealthModule,
   type SaveStateOfMindInput,
   type StateOfMindChangeEvent,
@@ -140,12 +142,123 @@ test('completed authorization request never fabricates read or write permission'
 test('reading does not require write permission or relabel external daily moods', async () => {
   const { bridge, samples, calls } = fixture();
   const result = await bridge.queryStateOfMind(1_699_999_000_000, 1_700_001_000_000, 50);
-  assert.strictEqual(result, samples);
+  assert.deepEqual(result, samples);
+  assert.notStrictEqual(result, samples);
   assert.equal(result[0].kind, 'dailyMood');
   assert.equal(result[0].valence, -0.321);
   assert.equal(result[0].isFromThisApp, false);
   assert.equal(calls.authorization, 0);
   assert.equal(calls.queries, 1);
+});
+
+test('own-source stable local IDs survive reads without modifying or sharing mutable arrays', async () => {
+  const { bridge, samples, calls } = fixture();
+  samples[0] = {
+    ...samples[0],
+    sourceBundleId: MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
+    isFromThisApp: true,
+    localEntryId: 'existing-local-entry',
+  };
+  const before = structuredClone(samples);
+  const [result] = await bridge.queryStateOfMind(0, 1000, 1);
+  assert.deepEqual(result, samples[0]);
+  assert.equal(result.localEntryId, 'existing-local-entry');
+  assert.notStrictEqual(result.labels, samples[0].labels);
+  assert.notStrictEqual(result.associations, samples[0].associations);
+  result.labels.push(999);
+  result.associations.push(999);
+  assert.deepEqual(samples, before);
+  assert.equal(calls.authorization, 0);
+  assert.equal(calls.writes.length, 0);
+});
+
+test('legacy own-source records without a local ID remain readable for unmatched display', async () => {
+  const { bridge, samples } = fixture();
+  samples[0] = {
+    ...samples[0],
+    sourceBundleId: MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
+    isFromThisApp: true,
+  };
+  const [result] = await bridge.queryStateOfMind(0, 1000, 1);
+  assert.equal(result.isFromThisApp, true);
+  assert.equal(Object.hasOwn(result, 'localEntryId'), false);
+  assert.equal(result.uuid, samples[0].uuid);
+});
+
+test('foreign identity cannot nominate a local entry even with an ownership flag or forged metadata', async () => {
+  const { bridge, samples } = fixture();
+  for (const [sourceBundleId, isFromThisApp] of [
+    ['com.apple.health', false],
+    ['com.apple.health', true],
+    [MOOD_HEALTH_APP_BUNDLE_IDENTIFIER, false],
+    [MOOD_HEALTH_APP_BUNDLE_IDENTIFIER + '.foreign', true],
+  ] as const) {
+    samples[0] = {
+      ...samples[0],
+      sourceBundleId,
+      isFromThisApp,
+      localEntryId: 'real-local-entry',
+      note: 'must never cross this read boundary',
+      metadata: { HKMetadataKeySyncIdentifier: 'moodtracker:real-local-entry' },
+      unexpected: true,
+    } as StateOfMindSample;
+    const [result] = await bridge.queryStateOfMind(0, 1000, 1);
+    assert.equal(result.isFromThisApp, false);
+    assert.equal(Object.hasOwn(result, 'localEntryId'), false);
+    assert.equal(Object.hasOwn(result, 'note'), false);
+    assert.equal(Object.hasOwn(result, 'metadata'), false);
+    assert.equal(Object.hasOwn(result, 'unexpected'), false);
+    assert.equal(result.uuid, samples[0].uuid);
+    assert.equal(result.kind, 'dailyMood');
+  }
+});
+
+test('invalid optional local IDs are rejected as match keys without hiding health records', async () => {
+  const { bridge, samples } = fixture();
+  for (const localEntryId of [
+    undefined,
+    null,
+    false,
+    123,
+    [],
+    {},
+    '',
+    '   ',
+    'x'.repeat(MAX_LOCAL_ENTRY_ID_LENGTH + 1),
+    '🙂'.repeat(MAX_LOCAL_ENTRY_ID_LENGTH / 2 + 1),
+    'entry\u0000tail',
+    'entry\n',
+    'entry\u007f',
+    'entry\u0085',
+    'entry\u200b',
+    'entry\u202e',
+    'entry\ufeff',
+  ]) {
+    samples[0] = {
+      ...samples[0],
+      sourceBundleId: MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
+      isFromThisApp: true,
+      localEntryId,
+    } as StateOfMindSample;
+    const [result] = await bridge.queryStateOfMind(0, 1000, 1);
+    assert.equal(Object.hasOwn(result, 'localEntryId'), false);
+    assert.equal(result.isFromThisApp, true);
+    assert.equal(result.uuid, samples[0].uuid);
+  }
+});
+
+test('validated local IDs retain exact spelling and the 160 UTF-16 limit', async () => {
+  const { bridge, samples } = fixture();
+  for (const localEntryId of ['x', ' entry ', '心情-记录', 'x'.repeat(160), '🙂'.repeat(80)]) {
+    samples[0] = {
+      ...samples[0],
+      sourceBundleId: MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
+      isFromThisApp: true,
+      localEntryId,
+    };
+    const [result] = await bridge.queryStateOfMind(0, 1000, 1);
+    assert.equal(result.localEntryId, localEntryId);
+  }
 });
 
 test('query accepts at most 366 days and 5000 samples', async () => {

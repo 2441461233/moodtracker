@@ -174,7 +174,7 @@ public final class MoodHealthModule: Module {
             return
           }
           let source = sample.sourceRevision.source
-          result.append([
+          var record: [String: Any] = [
             "uuid": sample.uuid.uuidString,
             "timestamp": sample.startDate.timeIntervalSince1970 * 1000,
             "kind": kind,
@@ -184,7 +184,11 @@ public final class MoodHealthModule: Module {
             "sourceName": source.name,
             "sourceBundleId": source.bundleIdentifier,
             "isFromThisApp": source.bundleIdentifier == ownBundle
-          ])
+          ]
+          if let localEntryId = self.localEntryIdentifier(for: sample, ownBundle: ownBundle) {
+            record["localEntryId"] = localEntryId
+          }
+          result.append(record)
         }
         promise.resolve(result)
       }
@@ -319,6 +323,22 @@ public final class MoodHealthModule: Module {
     case "dating": return .dating
     default: return nil
     }
+  }
+
+  @available(iOS 18.0, *)
+  private func localEntryIdentifier(for sample: HKStateOfMind, ownBundle: String) -> String? {
+    // The source guard short-circuits before metadata access. Never read foreign
+    // metadata to infer ownership, and never return arbitrary metadata or notes.
+    guard sample.sourceRevision.source.bundleIdentifier == ownBundle,
+          let syncIdentifier = sample.metadata?[HKMetadataKeySyncIdentifier] as? String,
+          syncIdentifier.hasPrefix("moodtracker:") else { return nil }
+    let identifier = String(syncIdentifier.dropFirst("moodtracker:".count))
+    guard !identifier.isEmpty, identifier.utf16.count <= 160,
+          !identifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+          !identifier.unicodeScalars.contains(where: {
+            $0.properties.generalCategory == .control || $0.properties.generalCategory == .format
+          }) else { return nil }
+    return identifier
   }
 
   @available(iOS 18.0, *)

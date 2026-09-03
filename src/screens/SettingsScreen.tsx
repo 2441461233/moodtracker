@@ -307,7 +307,7 @@ export default function SettingsScreen() {
               moodtracker.
             </Label>
             <Label muted style={{ fontSize: 11 }}>
-              心情日记 · 2.1.1
+              心情日记 · 2.1.2
             </Label>
             <Label muted style={{ fontSize: 11, lineHeight: 22 }}>
               一个帮助自我记录与觉察的小空间。{'\n'}不提供诊断或治疗，不能替代专业支持。

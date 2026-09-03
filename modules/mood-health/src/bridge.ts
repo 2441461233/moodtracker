@@ -2,6 +2,8 @@ import {
   HEALTH_ASSOCIATIONS,
   MAX_QUERY_DAYS,
   MAX_QUERY_LIMIT,
+  MAX_LOCAL_ENTRY_ID_LENGTH,
+  MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
   type AuthorizationResult,
   type MoodHealthAvailability,
   type NativeMoodHealthModule,
@@ -24,6 +26,36 @@ export class MoodHealthError extends Error {
 
 function invalid(message: string): never {
   throw new MoodHealthError('ERR_MOOD_HEALTH_INVALID_INPUT', message);
+}
+
+function normalizedReadSample(sample: StateOfMindSample): StateOfMindSample {
+  // The native source identity and its explicit ownership flag must agree. A
+  // foreign sample can never nominate a local journal entry for deduplication.
+  const isFromThisApp =
+    sample.isFromThisApp === true && sample.sourceBundleId === MOOD_HEALTH_APP_BUNDLE_IDENTIFIER;
+  const record: StateOfMindSample = {
+    uuid: sample.uuid,
+    timestamp: sample.timestamp,
+    kind: sample.kind,
+    valence: sample.valence,
+    labels: [...sample.labels],
+    associations: [...sample.associations],
+    sourceName: sample.sourceName,
+    sourceBundleId: sample.sourceBundleId,
+    isFromThisApp,
+  };
+  if (
+    isFromThisApp &&
+    typeof sample.localEntryId === 'string' &&
+    sample.localEntryId.length > 0 &&
+    sample.localEntryId.length <= MAX_LOCAL_ENTRY_ID_LENGTH &&
+    sample.localEntryId.trim().length > 0 &&
+    !/[\p{Cc}\p{Cf}]/u.test(sample.localEntryId)
+  )
+    record.localEntryId = sample.localEntryId;
+  // An invalid optional ID is not trusted, but the original health observation
+  // remains visible. Legacy binaries that omit the field keep working as well.
+  return record;
 }
 
 /** Pure adapter: safe fallbacks can be tested without a HealthKit store. */
@@ -118,7 +150,8 @@ export function createMoodHealthBridge(native: NativeMoodHealthModule | null, pl
     if (endMs - startMs > MAX_QUERY_DAYS * 86_400_000) invalid('每次最多读取 366 天的情绪记录。');
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_QUERY_LIMIT)
       invalid('每次读取数量必须为 1 至 5000 的整数。');
-    return module.queryStateOfMind(startMs, endMs, limit);
+    const samples = await module.queryStateOfMind(startMs, endMs, limit);
+    return samples.map(normalizedReadSample);
   }
 
   async function saveStateOfMind(input: SaveStateOfMindInput): Promise<{ uuid: string }> {

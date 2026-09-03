@@ -267,6 +267,9 @@ export function Segment<T extends string>({
     <View
       style={{
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        rowGap: 4,
+        maxWidth: '100%',
         backgroundColor: theme.subtle,
         padding: 4,
         borderRadius: 13,
@@ -282,6 +285,8 @@ export function Segment<T extends string>({
           style={({ pressed }) => ({
             minHeight: 36,
             minWidth: 62,
+            maxWidth: '100%',
+            flexShrink: 1,
             paddingHorizontal: 15,
             alignItems: 'center',
             justifyContent: 'center',

@@ -34,6 +34,10 @@ export type StateOfMindChangeEvent = {
 
 export type MoodHealthSubscription = { remove(): void };
 
+/** This private bridge is shipped only by the existing MoodTracker application. */
+export const MOOD_HEALTH_APP_BUNDLE_IDENTIFIER = 'com.zhenyu.moodjournal.app';
+export const MAX_LOCAL_ENTRY_ID_LENGTH = 160;
+
 export type StateOfMindSample = {
   uuid: string;
   timestamp: number;
@@ -45,6 +49,8 @@ export type StateOfMindSample = {
   sourceName: string;
   sourceBundleId: string;
   isFromThisApp: boolean;
+  /** Validated own-source sync ID suffix; absent for external or legacy samples. */
+  localEntryId?: string;
 };
 
 /** Apple enum names only; sleep, finances and dailyTasks are not enum cases. */
