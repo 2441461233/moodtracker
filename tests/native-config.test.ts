@@ -17,6 +17,8 @@ test('native release retains the verified existing app, team and version identit
   assert.equal(eas.submit.production.ios.ascAppId, '6776595613');
   assert.equal(eas.submit.production.ios.appleTeamId, app.ios.appleTeamId);
   assert.equal(app.version, pkg.version);
+  assert.equal(app.owner, 'zhen2yu');
+  assert.equal(app.extra.eas.projectId, '427558a5-13db-42e4-a992-8a5167b5bffe');
   assert.ok(Number(app.ios.buildNumber) > 1);
 });
 
@@ -40,6 +42,7 @@ test('the local module is registered for Apple without raising journal minimum t
 
 test('production and simulator profiles are distinct and do not embed account credentials', () => {
   assert.equal(eas.build.production.distribution, 'store');
+  assert.equal(eas.build.production.credentialsSource, 'local');
   assert.equal(eas.build.production.autoIncrement, true);
   assert.equal(eas.cli.appVersionSource, 'remote');
   assert.equal(eas.build.simulator.ios.simulator, true);
@@ -50,6 +53,16 @@ test('production and simulator profiles are distinct and do not embed account cr
   }
   assert.equal(eas.submit.production.ios.appleId, undefined);
   assert.equal(eas.submit.production.ios.ascApiKeyPath, undefined);
+});
+
+test('release uses system encryption only and keeps local signing files out of Git', () => {
+  assert.equal(app.ios.config.usesNonExemptEncryption, false);
+  const ignored = readFileSync(new URL('../.gitignore', import.meta.url), 'utf8');
+  assert.ok(ignored.split('\n').includes('/credentials.json'));
+  for (const profile of [eas.build.production, eas.build.simulator]) {
+    assert.equal(profile.node, '22.23.1');
+    assert.equal(profile.ios.image, 'macos-sequoia-15.6-xcode-26.2');
+  }
 });
 
 test('native EAS config cannot inherit the GitHub Pages asset prefix', () => {

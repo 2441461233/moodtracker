@@ -16,7 +16,7 @@ Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pag
 - 设置中的 Apple 健康面板：明确授权、手动读取、批量写入前确认、来源 / 当下情绪 / 一天整体心情区分、权限不足和失败状态。
 - `com.apple.developer.healthkit` entitlement 与中文读写用途说明。
 - iOS 最低系统 15.1；心境接入在运行时要求 iOS 18+，旧系统仍能使用日记。
-- `eas.json` 的 simulator / production 构建和现有 App 的提交配置；已绑定真实 EAS 项目，没有提交密码、证书或 API key。
+- `eas.json` 的 simulator / production 构建和现有 App 的提交配置；已绑定真实 EAS 项目，没有向仓库提交密码、证书或 API key。
 - `.github/workflows/verify-ios.yml` 验证实际 Swift 与模拟器链接，**不签名、不上传 TestFlight**。
 
 ## 已核验的发布进度
@@ -24,13 +24,17 @@ Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pag
 - EAS 已登录个人账号 `zhen2yu`，项目为 [@zhen2yu/moodtracker](https://expo.dev/accounts/zhen2yu/projects/moodtracker)，ID：`427558a5-13db-42e4-a992-8a5167b5bffe`。
 - 已核对 Free 计划，本轮构建前 iOS 包含额度为 15 次、已用 0 次；未开启付费订阅。这是当时用量快照，不代表后续剩余额度。
 - [GitHub iOS 验证 33711974366](https://github.com/2441461233/moodtracker/actions/runs/33711974366) 在提交 `145cf01032f49516e3ab9d9a4d1753f2d912868b` 上成功，耗时 9 分 55 秒。Xcode 26.3 / 模拟器 SDK 26.2 已完成 MoodHealth 的 arm64、x86_64 真实 Swift 编译和模拟器链接。
-- **尚未生成签名真机包或上传 TestFlight**；禁止修改凭据的预检确认 EAS 尚未配置 iOS 签名凭据，因此没有发起云端构建。创建发布证书及托管私钥前需所有者明确授权。模拟器编译成功不等于真实 HealthKit 读写、签名或手机更新已经验收。
+- 所有者已明确同意继续签名托管，并要求直接发布到 TestFlight。
+- Apple Distribution 证书已签发：Team `9PB9F396XQ`，证书 ID `N46K339LNH`，有效至 2027-09-03；未撤销旧证书。现有 MoodJournal App ID 已启用 HealthKit。
+- App Store provisioning profile `JHW9QHZK8M`（MoodTracker AppStore HealthKit 20260903）已生成，并通过本地校验：现有 Team / Bundle ID、HealthKit entitlement、App Store 分发类型和发布证书匹配。**尚未生成签名真机包或上传 TestFlight**。模拟器编译成功不等于真实 HealthKit 读写、签名或手机更新已经验收。
 
 ## 构建与上传
 
 当前工作机只有 Command Line Tools，没有完整 Xcode。EAS 登录和项目绑定已经完成，后续签名构建使用云端环境。
 
 登录必须由所有者在官方页面或受控终端中完成。不要把 Apple / Expo 密码、验证码、应用专用密码贴入聊天或提交仓库。生成或授权长期密钥前，确认具体权限与保管方式，不自动扩大账号访问范围。
+
+production 使用 `credentialsSource=local`，由本地提供签名材料，仍由 EAS 云端构建机完成构建与签名，不是本机 Xcode 构建。`credentials.json` 已加入忽略规则；签名材料和密码不进入 Git 仓库。
 
 核对现有账号与签名凭据后，在项目目录执行：
 
@@ -46,7 +50,9 @@ simulator / production 均固定 Node.js `22.23.1` 与 EAS 镜像 `macos-sequoia
 
 EAS Submit 只负责上传二进制。仍需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，再分配到现有内部 TestFlight 组“个人测试组”。不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
 
-当前尚未声明 `ITSAppUsesNonExemptEncryption`，上传后还需核对并完成 Apple 的加密合规信息；不得把缺失的声明当作已通过。
+已设置 `ios.config.usesNonExemptEncryption=false`，并用 `expo config --type introspect` 核实生成的 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`；最终签名 IPA 仍需复核实际值。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
+
+当前代码与锁定依赖未发现自定义加密、VPN 或非系统加密实现。Expo 的摘要计算使用 Apple CryptoKit，网络使用系统 URLSession；MoodHealth 使用系统 HealthKit。Apple 明确说明，仅使用 Apple 操作系统提供的加密时，无需向 App Store Connect 上传加密文档；无加密或仅使用豁免加密可将该键设为 `NO`。这不是“完全没有加密”或免除所有出口合规义务的声明；依赖、加密功能或分发要求变化时必须重新核对。[Apple 文档要求](https://developer.apple.com/help/app-store-connect/reference/app-information/export-compliance-documentation-for-encryption)、[Apple 声明规则](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations)
 
 App Store 正式发布还需要元数据、截图、隐私信息、审核和分发状态；当前配置不会自动替所有者提交未准备好的商店版本。
 

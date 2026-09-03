@@ -29,6 +29,9 @@
       "bundleIdentifier": "com.zhenyu.moodjournal.app",
       "appleTeamId": "9PB9F396XQ",
       "buildNumber": "2",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "entitlements": {
         "com.apple.developer.healthkit": true
       },
