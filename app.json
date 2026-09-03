@@ -2,20 +2,30 @@
   "expo": {
     "name": "心情日记",
     "slug": "moodtracker",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "一个只属于你的心情空间。记录感受、回看日历、发现生活与情绪的小关联。",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "plugins": ["expo-font"],
+    "plugins": ["expo-font", ["expo-build-properties", { "ios": { "deploymentTarget": "15.1" } }]],
     "splash": {
       "image": "./assets/app-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F7F8FC"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zhenyu.moodjournal.app",
+      "appleTeamId": "9PB9F396XQ",
+      "buildNumber": "2",
+      "entitlements": {
+        "com.apple.developer.healthkit": true
+      },
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "在你选择读取时，显示 Apple 健康与正念中记录的心境，方便一起回顾。读取结果只在当前页面展示，不加入日记备份。",
+        "NSHealthUpdateUsageDescription": "在你确认写入时，将选定的心情、记录时间和可对应的活动写入 Apple 健康的心境。文字日记不会写入。"
+      }
     },
     "android": {
       "adaptiveIcon": {

@@ -1,0 +1,50 @@
+name: Verify unsigned iOS native build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Compile app and HealthKit module (no signing)
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      # A stable version explicitly included in the macos-15 runner image.
+      # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      CI: 1
+      EXPO_NO_TELEMETRY: 1
+      COCOAPODS_DISABLE_STATS: true
+      EXPO_PUBLIC_BASE_URL: ''
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Generate and compile unsigned native app
+        id: native
+        run: bash scripts/verify-ios.sh
+      - name: Keep native build diagnostics
+        if: always() && steps.native.outputs.logs != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-native-verification-${{ github.sha }}
+          path: ${{ steps.native.outputs.logs }}
+          retention-days: 7
+          if-no-files-found: warn

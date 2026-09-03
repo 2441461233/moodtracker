@@ -4,6 +4,7 @@ import { useMood } from '../context/MoodContext';
 import { Page } from '../components/Page';
 import { Button, Card, Icon, Label, SectionTitle, Segment } from '../components/ui';
 import { Sheet } from '../components/Sheet';
+import { AppleHealthPanel } from '../components/AppleHealthPanel';
 import { font, useLayout, useTheme } from '../theme';
 import { AppSettings, MoodEntry } from '../types';
 import { parseBackup } from '../storage/core';
@@ -218,6 +219,7 @@ export default function SettingsScreen() {
               </View>
             </View>
           </Card>
+          <AppleHealthPanel />
           <Card>
             <SectionTitle
               title="你的记录，始终由你掌握"
@@ -275,11 +277,12 @@ export default function SettingsScreen() {
               有些心事，{'\n'}只需要自己知道。
             </Label>
             <Label muted style={{ fontSize: 13, lineHeight: 24 }}>
-              无需注册，不上传你的心情。{'\n'}笔记、活动与洞察都在这台设备上处理。
+              无需注册，不上传到我们的服务器。{'\n'}笔记、活动与洞察在本地处理；可选的 Apple
+              健康读写，只在你授权并操作时发生。
             </Label>
             <View style={{ height: 1, backgroundColor: theme.accent + '30' }} />
             <View style={{ gap: 12 }}>
-              {['不接入 AI 情绪分析', '不设置广告与追踪统计', '不自动同步到云端'].map((item) => (
+              {['不接入 AI 情绪分析', '不设置广告与追踪统计', '不自动上传文字日记'].map((item) => (
                 <View key={item} style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
                   <Icon name="check-circle-outline" color={theme.accentText} size={17} />
                   <Label style={{ fontSize: 12 }}>{item}</Label>
@@ -304,7 +307,7 @@ export default function SettingsScreen() {
               moodtracker.
             </Label>
             <Label muted style={{ fontSize: 11 }}>
-              心情日记 · 2.0.0
+              心情日记 · 2.1.0
             </Label>
             <Label muted style={{ fontSize: 11, lineHeight: 22 }}>
               一个帮助自我记录与觉察的小空间。{'\n'}不提供诊断或治疗，不能替代专业支持。

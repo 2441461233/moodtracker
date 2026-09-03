@@ -1,6 +1,6 @@
 {
   "name": "moodtracker",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -9,9 +9,9 @@
     "web": "expo start --web",
     "preview": "node scripts/serve-web.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "tsx --test tests/*.test.ts modules/mood-health/tests/*.test.ts",
     "test:web": "node --test tests/web-export.test.mjs",
-    "format": "prettier --write App.tsx src tests scripts app.config.js app.json package.json .github/workflows/deploy.yml README.md design-qa.md",
+    "format": "prettier --write App.tsx src tests scripts/*.mjs app.config.js app.json eas.json package.json .github/workflows/*.yml README.md design-qa.md docs modules/mood-health/**/*.ts modules/mood-health/*.json modules/mood-health/*.md",
     "build": "npm run build:web",
     "build:web": "EXPO_PUBLIC_BASE_URL=/moodtracker expo export --platform web && node scripts/prepare-web.mjs",
     "verify": "npm run typecheck && npm test && npm run build:web && npm run test:web"
@@ -23,10 +23,12 @@
     "@react-navigation/bottom-tabs": "^7.15.9",
     "@react-navigation/native": "^7.2.2",
     "expo": "~54.0.33",
+    "expo-build-properties": "~1.0.10",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.24",
     "expo-font": "~14.0.12",
     "expo-haptics": "~15.0.8",
+    "expo-modules-core": "~3.0.30",
     "expo-sharing": "~14.0.8",
     "expo-status-bar": "~3.0.9",
     "expo-system-ui": "~6.0.9",

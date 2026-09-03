@@ -1,8 +1,8 @@
-# 心情日记 · MoodTracker 2.0
+# 心情日记 · MoodTracker 2.1
 
 一个温柔、私密、无需注册的心情空间。保留 Expo / React Native 原生项目，支持 iOS、Android 和响应式网页。
 
-[打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md)
+[打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
 ## 这一版有什么
 
@@ -11,6 +11,7 @@
 - **心情日历**：月历、十二个月的年像素、按日回看、跨日期搜索、心情筛选。
 - **情绪洞察**：周 / 月 / 90 天趋势、心情分布、活动关联。数据不足时留白，不生成虚构结论。
 - **我的空间**：本地称呼、浅色 / 深色 / 跟随系统、原生触感反馈。
+- **Apple 健康心境**：iOS 18+ 原生包可明确授权后手动读取与写入；区分当下情绪与一天整体心情，不写文字日记。网页版与 Expo Go 不支持。见 [接入边界](docs/apple-health.md)。
 - **备份**：JSON 导出 / 合并导入，支持旧版数组格式；CSV 适合自行整理。
 - **一分钟呼吸**：可暂停、继续、随时退出；进入后台自动暂停，尊重减少动态效果设置。
 - **网页版**：手机浮动导航与快捷记录、桌面侧栏、安装图标、分享预览和离线应用资源缓存。
@@ -32,7 +33,7 @@ npm run ios
 npm run android
 ```
 
-原生真机需要与 SDK 54 兼容的 Expo Go / development build。项目没有配置 EAS 项目、签名证书或商店账户；网页版部署不等于 App Store / Google Play 发布。
+普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已经配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，但尚需项目所有者完成 EAS 登录、真实项目绑定和签名。网页版部署不等于 App Store / Google Play 发布。
 
 生产构建及本地验收：
 
@@ -47,12 +48,12 @@ npm run preview
 
 记录使用原有 AsyncStorage 键 `mood_entries`，旧版 emotionId / categoryId / note / timestamp 保持兼容。旧分类自动显示为对应活动，不会在启动时重写旧记录。新记录最多 1,000 字；导入支持旧有的较长笔记，编辑时不会悄悄截断。
 
-- 不要求账户，不接入 AI 情绪分析、广告、追踪统计或云同步。
+- 不要求账户，不接入 AI 情绪分析、广告、追踪统计或自建云同步。可选的 Apple 健康读写由用户明确触发，系统健康数据同步由 Apple 设置管理。
 - 网页保存在当前浏览器的当前站点存储，原生保存在应用内；记录不会随代码推送到 GitHub。
 - 首次联网完整加载并缓存后，可以离线打开和记录。无痕模式、浏览器清理、存储配额和操作系统回收仍可能影响保存。
 - 数据**未单独加密**。请保护设备访问权限，定期导出备份并妥善保管文件。
 - 不同浏览器 / 设备不自动同步；移动数据请手动导出 JSON 后导入。
-- JSON 备份只包含心情记录，不包含称呼、主题等偏好。CSV 用于查看，不是恢复格式。
+- JSON 备份只包含本地心情记录，不包含称呼、主题、健康读取结果或写入账本。CSV 用于查看，不是恢复格式。
 - 导入只添加新编号，相同编号始终保留本地版本；不会用旧备份覆盖近期编辑。
 - 备份最大 10 MB、10,000 条；导出保留恢复所需的完整字段。接近配额或写入失败时，显示错误并保留输入。
 - 多次保存进入串行队列；支持 Web Locks 的浏览器还会协调跨标签写入。编辑和删除会检查旧快照冲突。
@@ -75,9 +76,11 @@ npm run preview
 
 `.github/workflows/deploy.yml` 在 main 更新时依次执行：
 
-`npm ci → TypeScript 检查 → 62 项数据回归 → Expo Web 导出 → 19 项发布回归 → GitHub Pages`
+`npm ci → TypeScript 检查 → 日记 / 健康写入 / 原生桥接回归 → Expo Web 导出 → 发布回归 → GitHub Pages`
 
 Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流模式；无服务器、数据库、支付服务或额外部署账户。
+
+另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。它不会生成可供手机更新的 TestFlight 构建；签名、上传和真机验收参见 [iOS 发布说明](docs/ios-release.md)。
 
 `scripts/prepare-web.mjs` 为 Expo 的静态输出添加中文元信息、Open Graph、manifest 和 Service Worker。离线缓存仅包含公开应用资源；版本由资源内容 hash 生成，不强制刷新正在填写的草稿。已有页面可能继续使用当前缓存版本，关闭所有该站点页面再重新打开即可激活已下载的新版本。
 
@@ -91,6 +94,8 @@ src/components/           可复用组件与记录 / 详情 / 呼吸弹层
 src/screens/              今日、日历、洞察、设置
 src/context/              应用状态与异步操作
 src/storage/              兼容旧版的校验、队列、冲突检查
+src/health/               健康写入映射、独立账本、串行和失败重试
+modules/mood-health/      本地 Swift HealthKit 模块与安全降级桥接
 src/lib/                  日期、统计、备份、跨平台文件传输
 src/data/                 心情、活动与旧分类
 tests/                    内存存储、日期、统计、备份回归

@@ -1,0 +1,15 @@
+{
+  "name": "mood-health",
+  "version": "1.0.0",
+  "description": "Private, explicit State of Mind access for the MoodTracker iOS application.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "license": "UNLICENSED",
+  "author": "MoodTracker",
+  "homepage": "https://github.com/2441461233/moodtracker",
+  "peerDependencies": {
+    "expo": "*",
+    "react-native": "*"
+  }
+}

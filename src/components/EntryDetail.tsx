@@ -48,7 +48,8 @@ export function EntryDetail() {
           {confirm ? (
             <>
               <Label style={{ fontSize: 13, lineHeight: 22 }}>
-                确定删除这条记录吗？此操作无法撤销，已导出的备份不会受影响。
+                确定删除这条记录吗？此操作无法撤销。已导出的备份，以及你已写入 Apple
+                健康的副本，不会一并删除。
               </Label>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <Button
