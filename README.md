@@ -4,7 +4,7 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**当前修订状态**：2.1.1 将 Apple 心境连接改为一次开启后的自动同步。`npm run verify` 已通过：TypeScript、145 项日记 / 健康 / 原生相关回归、Web 导出和 19 项网页测试。[2.1.1（5）签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/6e853857-c58e-41f9-89e0-ec9a3c1c10e4) 已完成验签，实际签名包含 HealthKit 与 Background Delivery；尚待上传身份验证、TestFlight 分发和真实 iPhone 验收。已发布的 2.1.0（4）仍是旧版手动连接，不能把其发布记录当作 2.1.1 已上线的证据。
+**当前发布状态**：2.1.1（5）已在既有内部 TestFlight「个人测试组」可用，2026-09-03 07:30 UTC 核实状态为「正在测试」。[签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/6e853857-c58e-41f9-89e0-ec9a3c1c10e4) 已验签，实际签名包含 HealthKit 与 Background Delivery；[上传任务](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/aa6fe5fe-ce47-4e17-9b1d-cc713a160266) 已完成。`npm run verify` 已通过：TypeScript、145 项日记 / 健康 / 原生相关回归、Web 导出和 19 项网页测试。此版将 Apple 心境连接改为一次开启后的自动同步；真实 iPhone 的授权、健康读写及升级数据保留仍待验收。
 
 ## 这一版有什么
 
@@ -37,7 +37,7 @@ npm run android
 
 普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
 
-历史版本 **2.1.0（4）已发布到既有内部 TestFlight 测试组**：[签名构建 a6c29f04](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/a6c29f04-396d-47ae-9ee8-c35adc40b92b) 已验签，[上传任务 4fde6ff8](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/4fde6ff8-1c27-47f0-8d95-f44fe5c0629b) 已完成。2026-09-03 06:42 UTC 在 App Store Connect 核实，既有“个人测试组”中的该构建状态为“正在测试”，原测试员仍在组内。**2.1.1（5）已生成并验签，但尚未上传 TestFlight**，需完成上传身份验证，再核对 Apple 处理及测试组状态。现有证书与 profile 可复用，无需再次生成。后续更新仍通过 **TestFlight → 情绪记录 → 更新**；建议先备份，**不要卸载旧 App**。原生编译、签名和分发均不能替代真实 iPhone 上的健康授权与同步验收。内部 TestFlight 发布不等于 App Store 正式上架，网页版部署也不等于 iOS 发布。
+**2.1.1（5）已发布到既有内部 TestFlight 测试组**。Apple 已处理完成；2026-09-03 07:30 UTC 在原「个人测试组」核实新构建状态为「正在测试」，原测试员仍在组内，测试说明已保存。手机通过 **TestFlight → 情绪记录 → 更新** 安装；建议先备份，**不要卸载旧 App**。更新后在 **我的 → 连接 Apple 健康 → 开启自动同步** 完成一次启用与授权，旧版的手动授权不会自动开启新版连接。之后无需每次手动同步；前台响应变化、回到 App 自动补齐，后台时效由 iOS 调度。此版沿用现有证书与 profile，没有新建另一款 App。原生编译、签名和分发均不能替代真实 iPhone 上的健康授权与同步验收；历史 2.1.0（4）的发布记录见 [iOS 发布说明](docs/ios-release.md)。内部 TestFlight 发布不等于 App Store 正式上架，网页版部署也不等于 iOS 发布。
 
 生产构建及本地验收：
 
@@ -85,7 +85,7 @@ npm run preview
 
 Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流模式；无服务器、数据库、支付服务或额外部署账户。
 
-另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[2.1.0 阶段已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33711974366) 使用 Xcode 26.3 / 模拟器 SDK 26.2，完成 MoodHealth 的 arm64 与 x86_64 编译。该 CI 产物不是手机安装包，也不验证后台 HealthKit 通知。2.1.0 历史签名和分发证据、2.1.1 当前修订状态及待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
+另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[2.1.1 已通过的构建](https://github.com/2441461233/moodtracker/actions/runs/33726763418) 实际编译了 App、MoodHealth 模块、自动同步观察器和 AppDelegate subscriber。该 CI 产物不是手机安装包，也不验证后台 HealthKit 通知。历史及当前版本的签名、分发证据与待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
 
 `scripts/prepare-web.mjs` 为 Expo 的静态输出添加中文元信息、Open Graph、manifest 和 Service Worker。离线缓存仅包含公开应用资源；版本由资源内容 hash 生成，不强制刷新正在填写的草稿。已有页面可能继续使用当前缓存版本，关闭所有该站点页面再重新打开即可激活已下载的新版本。
 
