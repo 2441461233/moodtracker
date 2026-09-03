@@ -4,7 +4,7 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**当前修订状态**：2.1.1 将 Apple 心境连接改为一次开启后的自动同步。`npm run verify` 已通过：TypeScript、145 项日记 / 健康 / 原生相关回归、Web 导出和 19 项网页测试；尚未完成签名构建、上传 TestFlight 或真机验收。已发布的 2.1.0（4）仍是旧版手动连接，不能把其发布记录当作 2.1.1 已上线的证据。
+**当前修订状态**：2.1.1 将 Apple 心境连接改为一次开启后的自动同步。`npm run verify` 已通过：TypeScript、145 项日记 / 健康 / 原生相关回归、Web 导出和 19 项网页测试。[2.1.1（5）签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/6e853857-c58e-41f9-89e0-ec9a3c1c10e4) 已完成验签，实际签名包含 HealthKit 与 Background Delivery；尚待上传身份验证、TestFlight 分发和真实 iPhone 验收。已发布的 2.1.0（4）仍是旧版手动连接，不能把其发布记录当作 2.1.1 已上线的证据。
 
 ## 这一版有什么
 
@@ -37,7 +37,7 @@ npm run android
 
 普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
 
-历史版本 **2.1.0（4）已发布到既有内部 TestFlight 测试组**：[签名构建 a6c29f04](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/a6c29f04-396d-47ae-9ee8-c35adc40b92b) 已验签，[上传任务 4fde6ff8](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/4fde6ff8-1c27-47f0-8d95-f44fe5c0629b) 已完成。2026-09-03 06:42 UTC 在 App Store Connect 核实，既有“个人测试组”中的该构建状态为“正在测试”，原测试员仍在组内。**2.1.1 自动同步尚未发布**；现有 provisioning profile 已核验允许 HealthKit Background Delivery，无需重生成证书或 profile，但仍需重新构建含新增 entitlement 的签名包并验签，再核对 Apple 处理及测试组状态。后续更新仍通过 **TestFlight → 情绪记录 → 更新**；建议先备份，**不要卸载旧 App**。原生编译、签名和分发均不能替代真实 iPhone 上的健康授权与同步验收。内部 TestFlight 发布不等于 App Store 正式上架，网页版部署也不等于 iOS 发布。
+历史版本 **2.1.0（4）已发布到既有内部 TestFlight 测试组**：[签名构建 a6c29f04](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/a6c29f04-396d-47ae-9ee8-c35adc40b92b) 已验签，[上传任务 4fde6ff8](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/4fde6ff8-1c27-47f0-8d95-f44fe5c0629b) 已完成。2026-09-03 06:42 UTC 在 App Store Connect 核实，既有“个人测试组”中的该构建状态为“正在测试”，原测试员仍在组内。**2.1.1（5）已生成并验签，但尚未上传 TestFlight**，需完成上传身份验证，再核对 Apple 处理及测试组状态。现有证书与 profile 可复用，无需再次生成。后续更新仍通过 **TestFlight → 情绪记录 → 更新**；建议先备份，**不要卸载旧 App**。原生编译、签名和分发均不能替代真实 iPhone 上的健康授权与同步验收。内部 TestFlight 发布不等于 App Store 正式上架，网页版部署也不等于 iOS 发布。
 
 生产构建及本地验收：
 
