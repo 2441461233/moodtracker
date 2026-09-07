@@ -5,7 +5,7 @@ import { useHealthSync } from '../context/HealthSyncContext';
 import { useTheme } from '../theme';
 import { Button, Icon, Label } from './ui';
 
-export function HealthTimelineNotice() {
+export function HealthTimelineNotice({ compact = false }: { compact?: boolean }) {
   const health = useHealthSync();
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
@@ -16,7 +16,11 @@ export function HealthTimelineNotice() {
   else if (!health.hasRead) message = '正在等待 Apple 心境读取；暂未显示不代表没有记录。';
   else if (!health.records.length)
     message = '本次没有读到 Apple 心境；可能是最近一年无记录，或未允许读取。';
-  else message = '已合并最近一年可读取的 Apple 心境 · 只读 · 已去除对应本地日记的副本';
+  else
+    message = compact
+      ? '含最近一年已读取的 Apple 心境 · 只读'
+      : '已合并最近一年可读取的 Apple 心境 · 只读 · 已去除对应本地日记的副本';
+  if (compact && health.readTruncated) message += ' · 已达 5,000 条读取上限';
   return (
     <View style={{ gap: 7 }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 7 }}>
@@ -25,7 +29,7 @@ export function HealthTimelineNotice() {
           {message}
         </Label>
       </View>
-      {health.enabled && (
+      {health.enabled && !compact && (
         <Label muted style={{ fontSize: 10, lineHeight: 18 }}>
           {health.readTruncated
             ? '本次已达到 5,000 条读取上限，较早记录可能未显示。'

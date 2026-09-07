@@ -30,7 +30,7 @@ interface MoodContextValue {
   detail: MoodEntry | null;
   breathing: boolean;
   toast: string | null;
-  openComposer: (request?: ComposerRequest) => void;
+  openComposer: (request?: ComposerRequest, options?: { preserveDraft?: boolean }) => void;
   closeComposer: () => void;
   openDetail: (entry: MoodEntry | null) => void;
   setBreathing: (value: boolean) => void;
@@ -127,9 +127,9 @@ export function MoodProvider({ children }: PropsWithChildren) {
     notify,
     reload,
     feedback,
-    openComposer: (request = {}) => {
+    openComposer: (request = {}, options) => {
       setNow(new Date());
-      setComposer(request);
+      setComposer((current) => (options?.preserveDraft && current ? current : request));
       feedback();
     },
     closeComposer: () => setComposer(null),

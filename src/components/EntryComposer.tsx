@@ -95,6 +95,7 @@ export function EntryComposer() {
   } as const;
   return (
     <Sheet
+      preserveOnQuickRecord
       scrollKey={step}
       scrollRef={scroll}
       dismissDisabled={saving}

@@ -19,6 +19,8 @@ import { BreathingExercise } from './src/components/BreathingExercise';
 import { Button, Card, EmptyState, Icon, Label } from './src/components/ui';
 import { moodStorage } from './src/storage';
 import { exportText } from './src/lib/transfer';
+import { QuickRecordProvider } from './src/context/QuickRecordContext';
+import { navigationRef } from './src/lib/navigation';
 
 // Web defaults to plain Views; enable screen detachment so transparent tabs cannot overlap.
 enableScreens();
@@ -29,7 +31,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <MoodProvider>
-        <AppContent />
+        <QuickRecordProvider>
+          <AppContent />
+        </QuickRecordProvider>
       </MoodProvider>
     </SafeAreaProvider>
   );
@@ -60,6 +64,7 @@ function AppContent() {
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <AmbientBackground />
       <NavigationContainer
+        ref={navigationRef}
         theme={{
           ...(dark ? DarkTheme : DefaultTheme),
           colors: {
@@ -91,7 +96,7 @@ function AppContent() {
           <Tab.Screen
             name="calendar"
             component={CalendarScreen}
-            options={{ title: '心情日历 · MoodTracker' }}
+            options={{ title: '情绪记录 · MoodTracker' }}
           />
           <Tab.Screen
             name="insights"

@@ -59,6 +59,9 @@ ios_verify_workspace="$(node -e '
 xcodebuild -list -json -project "$ios_verify_project" \
   > "$ios_verify_logs/project.json"
 
+node scripts/verify-widget-project.mjs "$ios_verify_project" \
+  | tee "$ios_verify_logs/widget-project.log"
+
 # xcode is part of the locked Expo config-plugin dependencies; it parses actual targets.
 ios_verify_scheme="$(node - "$ios_verify_project" "$ios_verify_logs/project.json" <<'NODE'
 const fs = require('node:fs');
@@ -99,6 +102,11 @@ const hasDateTimePicker = Object.values(pods.pbxNativeTargetSection()).some(
     String(target.name).replace(/^"(.*)"$/, '$1') === 'RNDateTimePicker'
 );
 if (!hasDateTimePicker) throw new Error('RNDateTimePicker is missing from CocoaPods targets');
+const hasWidgetTarget = Object.values(pods.pbxNativeTargetSection()).some(
+  target => typeof target === 'object' &&
+    String(target.name).replace(/^"(.*)"$/, '$1') === 'MoodWidgets'
+);
+if (!hasWidgetTarget) throw new Error('MoodWidgets is missing from CocoaPods targets');
 function providers(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const location = path.join(directory, entry.name);
@@ -110,7 +118,11 @@ const registered = providers('ios/Pods/Target Support Files').some(file =>
   fs.readFileSync(file, 'utf8').includes('MoodHealthModule.self')
 );
 if (!registered) throw new Error('MoodHealthModule is missing from Expo module registration');
-console.log('Verified MoodHealth, RNDateTimePicker pod targets and Expo registration.');
+const widgetsRegistered = providers('ios/Pods/Target Support Files').some(file =>
+  fs.readFileSync(file, 'utf8').includes('MoodWidgetsModule.self')
+);
+if (!widgetsRegistered) throw new Error('MoodWidgetsModule is missing from Expo registration');
+console.log('Verified MoodHealth, MoodWidgets, RNDateTimePicker pod targets and Expo registration.');
 NODE
 
 printf 'Building workspace %s, scheme %s\n' "$ios_verify_workspace" "$ios_verify_scheme"
@@ -127,12 +139,18 @@ xcodebuild \
   CODE_SIGN_IDENTITY='' \
   build 2>&1 | tee "$ios_verify_logs/xcodebuild.log"
 
+ios_verify_widget="$ios_verify_output/DerivedData/Build/Products/Debug-iphonesimulator/$ios_verify_scheme.app/PlugIns/QuickRecordWidget.appex"
+if [[ ! -f "$ios_verify_widget/QuickRecordWidget" ]]; then
+  printf '%s\n' 'The built app is missing the compiled widget extension.' >&2
+  exit 1
+fi
+
 printf '%s\n' 'Unsigned iOS Simulator native compilation succeeded. No TestFlight build was uploaded.'
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   printf '%s\n' \
     '### Native verification passed' \
     '' \
-    'The app and MoodHealth Swift module compiled for the iOS Simulator without signing.' \
+    'The app, MoodHealth and MoodWidgets modules, and embedded widgets compiled for the iOS Simulator without signing.' \
     'This is a compile check, not a signed device build, TestFlight upload, or HealthKit device test.' \
     >> "$GITHUB_STEP_SUMMARY"
 fi

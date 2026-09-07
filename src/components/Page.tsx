@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react';
+import React, { PropsWithChildren, useEffect, useRef } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
@@ -13,18 +13,30 @@ export function Page({
   subtitle,
   eyebrow,
   action = true,
-}: PropsWithChildren<{ title: string; subtitle?: string; eyebrow?: string; action?: boolean }>) {
+  scrollKey,
+}: PropsWithChildren<{
+  title: string;
+  subtitle?: string;
+  eyebrow?: string;
+  action?: boolean;
+  scrollKey?: string | number;
+}>) {
   const { desktop, compact, width } = useLayout();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { openComposer } = useMood();
   const keyboardVisible = useKeyboardVisible();
+  const scroll = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (scrollKey !== undefined) scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [scrollKey]);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
       <ScrollView
+        ref={scroll}
         style={{ flex: 1 }}
         contentContainerStyle={{
           flexGrow: 1,

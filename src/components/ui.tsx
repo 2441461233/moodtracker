@@ -135,11 +135,7 @@ export function Button({
       ? theme.danger
       : theme.accentText;
   const backgroundColor =
-    kind === 'secondary'
-      ? theme.accentSoft
-      : kind === 'danger'
-        ? theme.dangerSoft
-        : 'transparent';
+    kind === 'secondary' ? theme.accentSoft : kind === 'danger' ? theme.dangerSoft : 'transparent';
   const content = busy ? (
     <ActivityIndicator color={color} size="small" />
   ) : icon ? (
@@ -259,14 +255,16 @@ export function SectionTitle({
   subtitle,
   action,
   onAction,
+  style,
 }: {
   title: string;
   subtitle?: string;
   action?: string;
   onAction?: () => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={styles.sectionTitle}>
+    <View style={[styles.sectionTitle, style]}>
       <View style={{ flex: 1, gap: 4 }}>
         <Label
           accessibilityRole="header"
@@ -385,9 +383,7 @@ export function Segment<T extends string>({
             borderRadius: 10,
             backgroundColor: value === option.id ? theme.surface : 'transparent',
             boxShadow:
-              value === option.id && !theme.dark
-                ? '0 3px 10px rgba(60, 54, 105, 0.12)'
-                : undefined,
+              value === option.id && !theme.dark ? '0 3px 10px rgba(60, 54, 105, 0.12)' : undefined,
             opacity: pressed ? 0.6 : 1,
           })}
         >

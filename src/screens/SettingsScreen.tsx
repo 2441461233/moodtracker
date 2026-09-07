@@ -243,6 +243,17 @@ export default function SettingsScreen() {
               </View>
             </View>
           </Card>
+          {Platform.OS === 'ios' && (
+            <Card>
+              <SectionTitle title="桌面小组件" subtitle="记录用小卡片，日历用大卡片" />
+              <Label style={{ fontSize: 13, lineHeight: 23 }}>
+                长按主屏幕空白处，选择添加小组件，搜索「心情日记」。添加小号「快速记录」和大号「心情日历」，再拖到喜欢的位置。
+              </Label>
+              <Label muted style={{ fontSize: 12, lineHeight: 22, marginTop: 10 }}>
+                小卡片轻点即记，已有输入会保留。大卡片显示本月的本地心情，轻点日期查看当天记录；保存后由系统安排刷新。
+              </Label>
+            </Card>
+          )}
         </View>
         <View
           style={{ flex: desktop ? 1 : undefined, width: desktop ? undefined : '100%', gap: 24 }}
@@ -316,7 +327,7 @@ export default function SettingsScreen() {
           </Label>
         </Disclosure>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
-          MoodTracker · 2.1.3
+          MoodTracker · 2.1.4
         </Label>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
           用于自我记录与觉察，不提供诊断或治疗，不能替代专业支持。

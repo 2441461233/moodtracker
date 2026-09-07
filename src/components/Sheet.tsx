@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
+import React, { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Keyboard,
@@ -11,8 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
 import { Button, IconButton, Label } from './ui';
-import { Gradient } from './effects';
 import { useKeyboardVisible } from '../lib/useKeyboardVisible';
+import { WidgetSheetContext } from '../context/WidgetSheetContext';
 
 export function Sheet({
   children,
@@ -26,6 +26,7 @@ export function Sheet({
   onDismiss,
   dismissDisabled = false,
   contentDisabled = false,
+  preserveOnQuickRecord = false,
 }: PropsWithChildren<{
   title: string;
   onClose: () => void;
@@ -37,6 +38,7 @@ export function Sheet({
   onDismiss?: () => void;
   dismissDisabled?: boolean;
   contentDisabled?: boolean;
+  preserveOnQuickRecord?: boolean;
 }>) {
   const theme = useTheme();
   const { compact, height } = useLayout();
@@ -45,6 +47,25 @@ export function Sheet({
   const internalScroll = useRef<ScrollView>(null);
   const scroll = scrollRef ?? internalScroll;
   const keyboardVisible = useKeyboardVisible();
+  const quickRecord = useContext(WidgetSheetContext);
+  const [quickDismissing, setQuickDismissing] = useState(false);
+  const latest = useRef({ visible, dismissDisabled, quickDismissing });
+  latest.current = { visible, dismissDisabled, quickDismissing };
+  useEffect(() => {
+    if (!quickRecord) return;
+    return quickRecord.register({
+      preserve: preserveOnQuickRecord,
+      dismiss: () => {
+        const current = latest.current;
+        if (!current.visible || current.dismissDisabled || current.quickDismissing) return;
+        Keyboard.dismiss();
+        setQuickDismissing(true);
+      },
+    });
+  }, [quickRecord, preserveOnQuickRecord]);
+  useEffect(() => {
+    quickRecord?.refresh();
+  }, [quickRecord, dismissDisabled, visible]);
   const requestClose = () => {
     if (dismissDisabled) return;
     Keyboard.dismiss();
@@ -65,12 +86,15 @@ export function Sheet({
   // RN Web Modal owns focus trapping/restoration and topmost-only Escape handling.
   return (
     <Modal
-      visible={visible}
+      visible={visible && !quickDismissing}
       transparent
       accessibilityLabel={title}
       animationType={reducedMotion ? 'none' : 'fade'}
       onRequestClose={requestClose}
-      onDismiss={onDismiss}
+      onDismiss={() => {
+        if (quickDismissing) onClose();
+        else onDismiss?.();
+      }}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
@@ -114,17 +138,6 @@ export function Sheet({
             paddingBottom: compact ? (keyboardVisible ? 0 : Math.max(insets.bottom, 12)) : 0,
           }}
         >
-          <View
-            pointerEvents="none"
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, zIndex: 1 }}
-          >
-            <Gradient
-              colors={[theme.accentFrom, theme.accentTo, 'rgba(255,255,255,0)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ flex: 1, opacity: 0.65 }}
-            />
-          </View>
           {compact && (
             <View
               style={{

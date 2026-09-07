@@ -10,7 +10,7 @@ import { useKeyboardVisible } from '../lib/useKeyboardVisible';
 
 const items: Record<string, { label: string; icon: string; short: string }> = {
   today: { label: '今日心情', short: '今天', icon: 'emoticon-happy-outline' },
-  calendar: { label: '心情日历', short: '日历', icon: 'calendar-month-outline' },
+  calendar: { label: '情绪记录', short: '记录', icon: 'calendar-month-outline' },
   insights: { label: '情绪洞察', short: '洞察', icon: 'chart-box-outline' },
   settings: { label: '我的空间', short: '我的', icon: 'tune-variant' },
 };
@@ -130,8 +130,7 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
                 alignItems: 'center',
                 borderRadius: desktop ? 14 : 19,
                 backgroundColor: active ? theme.accentSoft : hovered ? theme.subtle : 'transparent',
-                boxShadow:
-                  active && theme.dark ? '0 0 24px rgba(139, 124, 246, 0.18)' : undefined,
+                boxShadow: active && theme.dark ? '0 0 24px rgba(139, 124, 246, 0.18)' : undefined,
                 opacity: pressed ? 0.65 : 1,
               })}
             >

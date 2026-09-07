@@ -1,0 +1,14 @@
+{
+  "name": "mood-widgets",
+  "version": "1.0.0",
+  "description": "Local calendar snapshots for MoodTracker Home Screen widgets.",
+  "main": "index.ts",
+  "private": true,
+  "license": "UNLICENSED",
+  "author": "MoodTracker",
+  "homepage": "https://github.com/2441461233/moodtracker",
+  "peerDependencies": {
+    "expo": "*",
+    "react-native": "*"
+  }
+}

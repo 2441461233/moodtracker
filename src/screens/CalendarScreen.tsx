@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Disclosure,
   Icon,
   IconButton,
   Label,
@@ -42,9 +43,14 @@ export default function CalendarScreen() {
   const theme = useTheme();
   const { desktop, compact } = useLayout();
   const route = useRoute();
-  const requestedDate = (route.params as { date?: string } | undefined)?.date;
+  const widgetParams = route.params as
+    | { date?: string; source?: 'local'; widgetRequest?: number }
+    | undefined;
+  const requestedDate = widgetParams?.date;
   const [month, setMonth] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [selected, setSelected] = useState(dayKey(now));
+  const [view, setView] = useState<'timeline' | 'calendar'>('timeline');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'month' | 'year'>('month');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<EmotionId | 'all'>('all');
@@ -58,8 +64,14 @@ export default function CalendarScreen() {
       setSelected(requestedDate);
       setMonth(new Date(date.getFullYear(), date.getMonth(), 1));
       setMode('month');
+      setView('calendar');
+      if (widgetParams?.source === 'local') {
+        setSource('local');
+        setQuery('');
+        setFilter('all');
+      }
     }
-  }, [requestedDate]);
+  }, [requestedDate, widgetParams?.widgetRequest]);
   const monthEntries = timelineInRange(
     sourceRecords,
     mode === 'year' ? new Date(month.getFullYear(), 0, 1) : month,
@@ -73,8 +85,16 @@ export default function CalendarScreen() {
   const filtered = filterTimeline(sourceRecords, {
     emotionId: filter,
     query: search || undefined,
-    day: search ? undefined : selected,
+    day: view === 'calendar' && !search ? selected : undefined,
   });
+  const showingDay = view === 'calendar' && !search;
+  const activeFilterCount = Number(source !== 'all') + Number(filter !== 'all') + Number(!!search);
+  const clearFilters = () => {
+    setQuery('');
+    setFilter('all');
+    setSource('all');
+    Keyboard.dismiss();
+  };
   const sourceLabel =
     source === 'local' ? '本地日记' : source === 'apple' ? 'Apple 健康' : '全部来源';
   const applePending = source !== 'local' && health.enabled && !health.hasRead;
@@ -116,63 +136,214 @@ export default function CalendarScreen() {
   };
   return (
     <Page
-      eyebrow="YOUR DAYS, IN COLOR"
-      title="每一天，都有自己的颜色"
-      subtitle="把零散的瞬间连起来，慢慢看见真实的自己。"
+      title="情绪记录"
+      subtitle="那些值得记住的瞬间，都在这里。"
+      scrollKey={`${view}:${filtersOpen}`}
     >
-      <View style={{ gap: 12, marginBottom: 20 }}>
+      <View
+        style={{ width: '100%', maxWidth: desktop ? 780 : undefined, alignSelf: 'center', gap: 20 }}
+      >
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 12,
+            gap: 8,
           }}
         >
-          <View style={{ gap: 4 }}>
-            <Label style={{ fontSize: 13, fontWeight: '600' }}>记录来源</Label>
-            <Label muted style={{ fontSize: 11 }}>
-              月历、年像素和期间回顾使用同一来源范围
-            </Label>
-          </View>
-          <Segment<TimelineSource>
+          <Segment
             options={[
-              { id: 'all', label: '全部' },
-              { id: 'local', label: '本地' },
-              { id: 'apple', label: 'Apple 健康' },
+              { id: 'timeline', label: '时间线' },
+              { id: 'calendar', label: '日历' },
             ]}
-            value={source}
-            onChange={setSource}
+            value={view}
+            onChange={(next) => {
+              setView(next);
+              Keyboard.dismiss();
+            }}
           />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              filtersOpen
+                ? '收起筛选'
+                : `展开筛选${activeFilterCount ? `，已应用 ${activeFilterCount} 项` : ''}`
+            }
+            accessibilityState={{ expanded: filtersOpen }}
+            onPress={() => {
+              setFiltersOpen((value) => !value);
+              Keyboard.dismiss();
+            }}
+            style={({ pressed }) => ({
+              minHeight: 44,
+              paddingHorizontal: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <Icon
+              name="filter-variant"
+              size={20}
+              color={activeFilterCount ? theme.accentText : theme.secondary}
+            />
+            <Label
+              style={{
+                fontSize: 13,
+                color: activeFilterCount ? theme.accentText : theme.secondary,
+              }}
+            >
+              筛选{activeFilterCount ? ` ${activeFilterCount}` : ''}
+            </Label>
+          </Pressable>
         </View>
-        {source !== 'local' && <HealthTimelineNotice />}
-      </View>
-      <View
-        style={{ flexDirection: desktop ? 'row' : 'column', gap: 24, alignItems: 'flex-start' }}
-      >
-        <View
-          style={{
-            flex: desktop ? 1.35 : undefined,
-            width: desktop ? undefined : '100%',
-            gap: 20,
-            minWidth: 0,
-          }}
-        >
-          <Card style={{ padding: compact ? 12 : 25 }}>
+        {filtersOpen && (
+          <Card style={{ padding: compact ? 16 : 22, gap: 16 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                backgroundColor: theme.subtle,
+                borderRadius: 12,
+                paddingHorizontal: 12,
+              }}
+            >
+              <Icon name="magnify" size={20} />
+              <TextInput
+                accessibilityLabel="跨日期搜索当前来源的笔记、活动、心情或 Apple 来源"
+                placeholder="搜索笔记、活动、心情或来源"
+                placeholderTextColor={theme.muted}
+                value={query}
+                onChangeText={setQuery}
+                returnKeyType="search"
+                onSubmitEditing={Keyboard.dismiss}
+                keyboardAppearance={theme.dark ? 'dark' : 'light'}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontFamily: font,
+                  fontSize: 16,
+                  minHeight: 48,
+                  color: theme.text,
+                }}
+              />
+              {query.length > 0 && (
+                <IconButton name="close" label="清空搜索" onPress={() => setQuery('')} />
+              )}
+            </View>
+            <View style={{ gap: 8 }}>
+              <Label muted style={{ fontSize: 12 }}>
+                来源
+              </Label>
+              <Segment<TimelineSource>
+                options={[
+                  { id: 'all', label: '全部' },
+                  { id: 'local', label: '本地' },
+                  { id: 'apple', label: 'Apple 健康' },
+                ]}
+                value={source}
+                onChange={setSource}
+              />
+            </View>
+            <View style={{ gap: 8 }}>
+              <Label muted style={{ fontSize: 12 }}>
+                心情
+              </Label>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+                {(['all', ...Object.keys(MOOD_APPEARANCE)] as (EmotionId | 'all')[]).map((id) => (
+                  <Pressable
+                    key={id}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      id === 'all' ? '全部心情' : `筛选${MOOD_APPEARANCE[id].label}`
+                    }
+                    accessibilityState={{ selected: filter === id }}
+                    onPress={() => setFilter(id)}
+                    style={({ pressed }) => ({
+                      minHeight: 44,
+                      paddingHorizontal: 11,
+                      justifyContent: 'center',
+                      borderRadius: 11,
+                      backgroundColor: filter === id ? theme.accentSoft : theme.subtle,
+                      opacity: pressed ? 0.6 : 1,
+                    })}
+                  >
+                    <Label
+                      style={{
+                        fontSize: 12,
+                        color: filter === id ? theme.accentText : theme.secondary,
+                      }}
+                    >
+                      {id === 'all' ? '全部' : MOOD_APPEARANCE[id].label}
+                    </Label>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+            <Label muted style={{ fontSize: 11, lineHeight: 18 }}>
+              搜索会查找所有日期。心情筛选只影响记录列表，来源同时应用于日历。
+            </Label>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+              <Button kind="ghost" onPress={clearFilters} disabled={!activeFilterCount}>
+                重置筛选
+              </Button>
+              <Button
+                kind="secondary"
+                onPress={() => {
+                  setFiltersOpen(false);
+                  Keyboard.dismiss();
+                }}
+              >
+                查看记录
+              </Button>
+            </View>
+          </Card>
+        )}
+        {!filtersOpen && activeFilterCount > 0 && (
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              columnGap: 10,
+              rowGap: 2,
+            }}
+          >
+            <Label
+              muted
+              numberOfLines={2}
+              style={{ flex: 1, minWidth: 120, fontSize: 12, lineHeight: 19 }}
+            >
+              {[
+                source !== 'all' ? sourceLabel : '',
+                filter !== 'all' ? MOOD_APPEARANCE[filter].label : '',
+                search ? `“${search}”` : '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </Label>
+            <Button kind="ghost" onPress={clearFilters} style={{ paddingHorizontal: 4 }}>
+              清除筛选
+            </Button>
+          </View>
+        )}
+        {view === 'calendar' && (
+          <Card style={{ padding: compact ? 12 : 22 }}>
             <View
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 23,
                 gap: 8,
+                marginBottom: 10,
               }}
             >
-              <Label style={{ fontSize: 19, fontWeight: '600' }}>
+              <Label style={{ fontSize: 18, fontWeight: '600', flex: 1 }}>
                 {month.getFullYear()}年{mode === 'month' ? ` ${month.getMonth() + 1}月` : ''}
               </Label>
-              <View style={{ flexDirection: 'row', gap: 7 }}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
                 <IconButton
                   label={mode === 'month' ? '上一个月' : '上一年'}
                   name="chevron-left"
@@ -192,7 +363,9 @@ export default function CalendarScreen() {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 22,
+                flexWrap: 'wrap',
+                gap: 6,
+                marginBottom: 12,
               }}
             >
               <Segment
@@ -203,8 +376,8 @@ export default function CalendarScreen() {
                 value={mode}
                 onChange={setMode}
               />
-              <Button kind="ghost" onPress={() => choose(now)} style={{ paddingHorizontal: 9 }}>
-                回到今天
+              <Button kind="ghost" onPress={() => choose(now)} style={{ paddingHorizontal: 6 }}>
+                今天
               </Button>
             </View>
             {mode === 'month' ? (
@@ -216,7 +389,7 @@ export default function CalendarScreen() {
                     </Label>
                   ))}
                 </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 4 }}>
                   {monthDays(month).map((date, index) => {
                     if (!date) return <View key={`empty-${index}`} style={{ width: '14.2857%' }} />;
                     const key = dayKey(date);
@@ -242,8 +415,8 @@ export default function CalendarScreen() {
                             setQuery('');
                           }}
                           style={({ pressed }) => ({
-                            minHeight: compact ? 56 : 66,
-                            paddingVertical: 8,
+                            minHeight: compact ? 44 : 54,
+                            paddingVertical: 5,
                             borderRadius: 15,
                             borderWidth: active ? 2 : 1,
                             borderColor: active ? theme.accent : 'transparent',
@@ -365,256 +538,134 @@ export default function CalendarScreen() {
             )}
             <View
               style={{
-                paddingTop: 22,
-                marginTop: 20,
                 borderTopWidth: 1,
                 borderTopColor: theme.border,
-                gap: 11,
+                marginTop: 14,
+                paddingTop: 12,
+                gap: 2,
               }}
             >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  gap: 13,
-                }}
-              >
-                {(Object.keys(MOOD_APPEARANCE) as EmotionId[]).map((id) => (
-                  <View key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <View
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: 3,
-                        backgroundColor: MOOD_APPEARANCE[id].color,
-                      }}
-                    />
-                    <Label muted style={{ fontSize: 10 }}>
-                      {MOOD_APPEARANCE[id].label}
-                    </Label>
-                  </View>
-                ))}
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 5,
-                }}
-              >
-                <Icon name="heart" size={11} color={theme.danger} />
-                <Label muted style={{ fontSize: 10 }}>
-                  爱心 / 像素描边表示含 Apple 心境
-                </Label>
-              </View>
-              <Label muted style={{ fontSize: 10, lineHeight: 18, textAlign: 'center' }}>
-                当前来源中若有“一天整体心情”，当天颜色优先取其均值；否则取“当下情绪”均值。Apple
-                愉悦度映射到 1–5 分，仅作近似回顾。
+              <Label muted style={{ fontSize: 12, lineHeight: 20 }}>
+                {mode === 'year' ? '这一年' : '这个月'} ·{' '}
+                {source === 'apple' && !health.hasRead ? '—' : monthGroups.size} 个记录日 ·{' '}
+                {source === 'apple' && !health.hasRead ? '—' : monthEntries.length} 条记录
               </Label>
-            </View>
-          </Card>
-          <Card style={{ padding: 21, gap: 15 }}>
-            <View style={{ gap: 5 }}>
-              <Label style={{ fontSize: 12, fontWeight: '600' }}>
-                {mode === 'year' ? '年度回顾' : '本月回顾'} · {sourceLabel}
-              </Label>
-              <Label muted style={{ fontSize: 10, lineHeight: 18 }}>
-                仅统计当前来源已载入的记录；有记录的日子等权平均。
-                {source !== 'local' ? 'Apple 心境范围以当前读取状态为准。' : ''}
-              </Label>
-            </View>
-            <View style={{ flexDirection: 'row' }}>
-              <View style={{ flex: 1, alignItems: 'center', gap: 7 }}>
-                <Label style={{ fontSize: 26, lineHeight: 33, fontWeight: '600' }}>
-                  {source === 'apple' && !health.hasRead ? '—' : monthGroups.size}
-                  <Label muted style={{ fontSize: 11 }}>
-                    {' '}
-                    天
-                  </Label>
-                </Label>
-                <Label muted style={{ fontSize: 11 }}>
-                  {mode === 'year' ? '这一年的陪伴' : '这个月的陪伴'}
-                </Label>
-              </View>
-              <View style={{ width: 1, backgroundColor: theme.border }} />
-              <View style={{ flex: 1, alignItems: 'center', gap: 7 }}>
-                <Label style={{ fontSize: 26, lineHeight: 33, fontWeight: '600' }}>
-                  {source === 'apple' && !health.hasRead ? '—' : monthEntries.length}
-                  <Label muted style={{ fontSize: 11 }}>
-                    {' '}
-                    条
-                  </Label>
-                </Label>
-                <Label muted style={{ fontSize: 11 }}>
-                  心境记录
-                </Label>
-              </View>
-              <View style={{ width: 1, backgroundColor: theme.border }} />
-              <View style={{ flex: 1, alignItems: 'center', gap: 7 }}>
-                <Label style={{ fontSize: 26, lineHeight: 33, fontWeight: '600' }}>
+              <Disclosure title="颜色与统计说明">
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {(Object.keys(MOOD_APPEARANCE) as EmotionId[]).map((id) => (
+                    <View key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 4,
+                          backgroundColor: MOOD_APPEARANCE[id].color,
+                        }}
+                      />
+                      <Label muted style={{ fontSize: 11 }}>
+                        {MOOD_APPEARANCE[id].label}
+                      </Label>
+                    </View>
+                  ))}
+                </View>
+                <Label muted style={{ fontSize: 11, lineHeight: 19 }}>
+                  {sourceLabel} · {mode === 'year' ? '年' : '月'}平均心情{' '}
                   {average === null ? '—' : average.toFixed(1)}
+                  。仅统计已载入的记录，有记录的日子等权平均。
                 </Label>
-                <Label muted style={{ fontSize: 11 }}>
-                  {source !== 'local' ? '近似' : ''}
-                  {mode === 'year' ? '年平均心情' : '月平均心情'}
+                <Label muted style={{ fontSize: 11, lineHeight: 19 }}>
+                  当天有“一天整体心情”时优先取其均值，否则取“当下情绪”均值。Apple 愉悦度映射到 1–5
+                  分，仅作近似回顾；爱心或像素描边表示含 Apple 心境。
                 </Label>
-              </View>
+              </Disclosure>
             </View>
           </Card>
-        </View>
-        <View
-          style={{
-            flex: desktop ? 1 : undefined,
-            width: desktop ? undefined : '100%',
-            minWidth: 0,
-            gap: 18,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 9,
-              backgroundColor: theme.surface,
-              borderWidth: 1,
-              borderColor: theme.border,
-              borderRadius: 15,
-              paddingHorizontal: 14,
-            }}
-          >
-            <Icon name="magnify" size={21} />
-            <TextInput
-              accessibilityLabel="跨日期搜索当前来源的笔记、活动、心情或 Apple 来源"
-              placeholder="搜索笔记、活动、心情或来源"
-              placeholderTextColor={theme.muted}
-              value={query}
-              onChangeText={setQuery}
-              returnKeyType="search"
-              onSubmitEditing={Keyboard.dismiss}
-              keyboardAppearance={theme.dark ? 'dark' : 'light'}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                fontFamily: font,
-                fontSize: 16,
-                minHeight: 48,
-                color: theme.text,
-              }}
-            />
-            {query.length > 0 && (
-              <IconButton name="close" label="清空搜索" onPress={() => setQuery('')} />
-            )}
-          </View>
-          <View style={{ gap: 8 }}>
-            <Label muted style={{ fontSize: 11 }}>
-              列表筛选 · 不改变日历和期间回顾
-            </Label>
-            {source !== 'local' && health.enabled && (
-              <Label muted style={{ fontSize: 10, lineHeight: 18 }}>
-                Apple 心境可按近似心情、类型与来源查找；笔记和活动关键词仅匹配本地日记。
-              </Label>
-            )}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-              {(['all', ...Object.keys(MOOD_APPEARANCE)] as const).map((id) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    id === 'all' ? '全部心情' : `筛选${MOOD_APPEARANCE[id as EmotionId].label}`
-                  }
-                  accessibilityState={{ selected: filter === id }}
-                  onPress={() => setFilter(id as EmotionId | 'all')}
-                  style={{
-                    minHeight: 44,
-                    paddingHorizontal: 11,
-                    justifyContent: 'center',
-                    borderRadius: 11,
-                    backgroundColor: filter === id ? theme.accentSoft : theme.surface,
-                    borderWidth: 1,
-                    borderColor: filter === id ? theme.accent : theme.border,
-                  }}
-                >
-                  <Label
-                    style={{
-                      fontSize: 11,
-                      color: filter === id ? theme.accentText : theme.secondary,
-                    }}
-                  >
-                    {id === 'all' ? '全部' : MOOD_APPEARANCE[id as EmotionId].label}
-                  </Label>
-                </Pressable>
-              ))}
-            </View>
-          </View>
+        )}
+        <View style={{ gap: 14 }}>
           <SectionTitle
-            title={search ? '搜索结果' : formatDate(parseLocalDate(selected)!)}
-            subtitle={`${filtered.length} 条已载入记录 · ${sourceLabel}${search ? ' · 跨日期' : ''}${filter !== 'all' ? ' · 已筛选心情' : ''}`}
-            action={!search && source !== 'apple' ? '补记' : undefined}
+            style={{ marginBottom: 0 }}
+            title={
+              search
+                ? '搜索结果'
+                : showingDay
+                  ? formatDate(parseLocalDate(selected)!, true)
+                  : '全部记录'
+            }
+            subtitle={`${filtered.length} 条${source === 'apple' ? '已读取' : ''}记录${showingDay ? '' : ' · 从新到旧'}`}
+            action={showingDay && source !== 'apple' ? '补记' : undefined}
             onAction={() => openComposer({ date: parseLocalDate(selected)! })}
           />
+          {source !== 'local' && (health.enabled || source === 'apple') && (
+            <HealthTimelineNotice compact />
+          )}
           {filtered.length ? (
             <TimelineList
-              key={`${source}:${selected}:${filter}:${search}`}
+              key={`${source}:${showingDay ? selected : 'all'}:${filter}:${search}`}
               records={filtered}
               onPressLocal={openDetail}
-              showDate={!!search}
+              groupByDate={!showingDay}
             />
           ) : (
             <Card style={{ padding: 4 }}>
               <EmptyState
-                icon={search ? 'text-search' : 'calendar-blank-outline'}
+                icon={
+                  search || activeFilterCount
+                    ? 'text-search'
+                    : showingDay
+                      ? 'calendar-blank-outline'
+                      : 'notebook-outline'
+                }
                 title={
                   emptyHealthTitle ??
                   (search || filter !== 'all'
                     ? '还没有找到这样的记录'
-                    : source === 'local'
+                    : showingDay
                       ? '这一天，留白也没关系'
-                      : '这一天暂无已载入记录')
+                      : '从一个瞬间开始')
                 }
                 description={
                   appleUnavailable
                     ? health.availability.available
-                      ? '在“我的”中开启 Apple 健康连接后，心境会自动出现在这里。本地日记仍可正常使用。'
-                      : 'Apple 心境需要 iOS 18 及以上的原生 App；当前仍可查看和记录本地日记。'
+                      ? '在“我的”中连接 Apple 健康后，可读取的心境会出现在这里。'
+                      : 'Apple 心境需要 iOS 18 及以上的原生 App；当前仍可查看本地日记。'
                     : applePending
-                      ? 'Apple 心境尚未完成读取，不能据此判断这一天没有记录。请查看上方的连接状态；本地记录不受影响。'
+                      ? 'Apple 心境还未完成读取，本地记录不受影响。'
                       : search || filter !== 'all'
-                        ? '试试其他关键词、全部心情或其他来源；列表筛选不会改变日历颜色。'
+                        ? '试试其他关键词，或清除筛选看看。'
                         : source === 'apple'
-                          ? '本次没有读取到这一天的心境，可能是无记录、超出读取范围或未允许读取。请查看上方的连接状态。'
-                          : source !== 'local' && health.availability.available
-                            ? '如果愿意，也可以补记一个你还记得的瞬间。Apple 心境是否完整请以上方读取状态为准。'
-                            : '如果愿意，也可以补记一个你还记得的瞬间。'
+                          ? '当前读取范围内没有显示心境，可能是无记录、超出范围或未允许读取。'
+                          : showingDay
+                            ? '可以补记这一天，也可以回到时间线看看其他日子。'
+                            : '留下第一条心情记录，以后就能在这里按时间回看。'
                 }
                 action={
-                  source === 'apple' && emptyHealthTitle
+                  source === 'apple'
                     ? '查看本地记录'
                     : search || filter !== 'all'
-                      ? '清除列表筛选'
-                      : source === 'apple'
-                        ? '查看本地记录'
-                        : '补记这一天'
+                      ? '清除筛选'
+                      : showingDay
+                        ? '补记这一天'
+                        : '记录此刻'
                 }
                 onAction={
-                  source === 'apple' && emptyHealthTitle
+                  source === 'apple'
                     ? () => {
                         setSource('local');
                         setQuery('');
                         setFilter('all');
                       }
                     : search || filter !== 'all'
-                      ? () => {
-                          setQuery('');
-                          setFilter('all');
-                        }
-                      : source === 'apple'
-                        ? () => setSource('local')
-                        : () => openComposer({ date: parseLocalDate(selected)! })
+                      ? clearFilters
+                      : () =>
+                          openComposer(showingDay ? { date: parseLocalDate(selected)! } : undefined)
                 }
               />
             </Card>
+          )}
+          {showingDay && (
+            <Button kind="ghost" onPress={() => setView('timeline')} icon="format-list-bulleted">
+              查看全部历史记录
+            </Button>
           )}
         </View>
       </View>

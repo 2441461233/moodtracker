@@ -1,10 +1,12 @@
-# 心情日记 · MoodTracker 2.1.3
+# 心情日记 · MoodTracker 2.1.4
 
 一个温柔、私密、无需注册的心情空间。保留 Expo / React Native 原生项目，支持 iOS、Android 和响应式网页。
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**当前发布状态（2026-09-07）**：2.1.3（7）包含系统日期 / 时间选择器、点叉直接关闭记录、日历与键盘交互修复、活动排序、文案与说明层级精简、视觉更新，以及日历切换洞察时旧页叠加的修复。198 项回归、类型检查、Web 导出均通过；[网页已部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)，[独立 iOS 编译](https://github.com/2441461233/moodtracker/actions/runs/34102893976)与 [EAS 签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)均成功。IPA 已通过严格验签，**上传已完成，等待 Apple 处理结果与原测试组分发确认**；真机验收仍待完成。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)和 [iOS 发布记录](docs/ios-release.md)。
+**2.1.4 发布准备（2026-09-07）**：包含记录时间线优先、精简筛选、弹框装饰条修复，以及小号快速记录 / 大号心情日历小组件。正在完成组合版本回归、App Group 签名与 TestFlight 发布；尚未确认可安装。
+
+**上一版本状态（2026-09-07）**：2.1.3（7）包含系统日期 / 时间选择器、点叉直接关闭记录、日历与键盘交互修复、活动排序、文案与说明层级精简、视觉更新，以及日历切换洞察时旧页叠加的修复。198 项回归、类型检查、Web 导出均通过；[网页已部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)，[独立 iOS 编译](https://github.com/2441461233/moodtracker/actions/runs/34102893976)与 [EAS 签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)均成功。IPA 已通过严格验签，**上传已完成，等待 Apple 处理结果与原测试组分发确认**；真机验收仍待完成。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)和 [iOS 发布记录](docs/ios-release.md)。
 
 历史 2.1.2（6）已于本次登录后台时确认在原「个人测试组」显示「正在测试」，上传时间为 2026-09-03 16:43（北京时间）。该版本统一了 Apple 心境的每日记录、月历 / 年像素与独立健康回顾。历史分发成功不能代表 2.1.3 已可更新。
 
@@ -21,6 +23,10 @@
 - **网页版**：手机浮动导航与快捷记录、桌面侧栏、安装图标、分享预览和离线应用资源缓存。
 
 ## 本地运行
+
+### 开发中的 iOS 桌面小组件
+
+新增小号「快速记录」与大号「心情日历」：点小卡片直接打开记录弹框，点大卡片的日期查看当天本地心情。需重新构建含 WidgetKit 扩展的 iOS App，并为主 App / 扩展配置 App Group 签名；不包含在上方已上传的 2.1.3（7）中。使用、数据边界和验收见 [iOS 桌面小组件](docs/ios-widgets.md)。
 
 使用 Node.js 22 LTS 和 npm。
 

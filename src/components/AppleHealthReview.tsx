@@ -222,7 +222,7 @@ export function AppleHealthReview({
           icon="calendar-month-outline"
           onPress={() => navigation.navigate('calendar')}
         >
-          去日历查看全部记录
+          查看全部记录
         </Button>
       </View>
       {expanded && health.hasRead && apple.length > 0 && (

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   native:
-    name: Compile app and HealthKit module (no signing)
+    name: Compile app, HealthKit and widgets (no signing)
     runs-on: macos-15
     timeout-minutes: 45
     env:

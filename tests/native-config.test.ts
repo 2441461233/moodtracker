@@ -24,6 +24,7 @@ test('native release retains the verified existing app, team and version identit
 
 test('HealthKit capability is scoped and both explicit permission purposes are present', () => {
   assert.deepEqual(app.ios.entitlements, {
+    'com.apple.security.application-groups': ['group.com.zhenyu.moodjournal.app.widgets'],
     'com.apple.developer.healthkit': true,
     'com.apple.developer.healthkit.background-delivery': true,
   });
@@ -98,4 +99,32 @@ test('system date/time picker is installed at the Expo-compatible version and co
     bundled['@react-native-community/datetimepicker'],
   );
   assert.ok(app.plugins.includes('@react-native-community/datetimepicker'));
+});
+
+test('widget extension signing metadata and the optional calendar module share the App Group', () => {
+  const widgetPlugin = createRequire(import.meta.url)('../plugins/with-quick-record-widget.js');
+  const configured = widgetPlugin(structuredClone(app));
+  assert.ok(app.plugins.includes('./plugins/with-quick-record-widget'));
+  assert.equal(app.ios.scheme, 'moodjournal');
+  assert.equal(configured.extra.eas.projectId, app.extra.eas.projectId);
+  assert.deepEqual(configured.extra.eas.build.experimental.ios.appExtensions, [
+    {
+      targetName: 'QuickRecordWidget',
+      bundleIdentifier: `${app.ios.bundleIdentifier}.QuickRecordWidget`,
+      entitlements: {
+        'com.apple.security.application-groups':
+          app.ios.entitlements['com.apple.security.application-groups'],
+      },
+    },
+  ]);
+  const registration = JSON.parse(
+    readFileSync(
+      new URL('../modules/mood-widgets/expo-module.config.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(registration, {
+    platforms: ['apple'],
+    apple: { modules: ['MoodWidgetsModule'] },
+  });
 });
