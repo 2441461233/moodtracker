@@ -4,17 +4,17 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**2.1.4 发布准备（2026-09-07）**：包含记录时间线优先、精简筛选、弹框装饰条修复，以及小号快速记录 / 大号心情日历小组件。正在完成组合版本回归、App Group 签名与 TestFlight 发布；尚未确认可安装。
+**2.1.4（8）已可通过 TestFlight 更新（2026-09-07）**：包含记录时间线优先、精简筛选、弹框装饰条修复，以及小号快速记录 / 大号心情日历小组件。214 项测试、类型检查、Web 导出和独立原生编译均通过；正式 IPA 严格验签、上传及 Apple 处理完成，原「个人测试组」已显示「正在测试」。真机功能验收仍待完成，精确构建和分发证据见 [iOS 发布记录](docs/ios-release.md)。
 
-**上一版本状态（2026-09-07）**：2.1.3（7）包含系统日期 / 时间选择器、点叉直接关闭记录、日历与键盘交互修复、活动排序、文案与说明层级精简、视觉更新，以及日历切换洞察时旧页叠加的修复。198 项回归、类型检查、Web 导出均通过；[网页已部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)，[独立 iOS 编译](https://github.com/2441461233/moodtracker/actions/runs/34102893976)与 [EAS 签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)均成功。IPA 已通过严格验签，**上传已完成，等待 Apple 处理结果与原测试组分发确认**；真机验收仍待完成。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)和 [iOS 发布记录](docs/ios-release.md)。
+**上一版本状态（2026-09-07）**：2.1.3（7）包含系统日期 / 时间选择器、点叉直接关闭记录、日历与键盘交互修复、活动排序、文案与说明层级精简、视觉更新，以及日历切换洞察时旧页叠加的修复。198 项回归、类型检查、Web 导出均通过；[网页已部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)，[独立 iOS 编译](https://github.com/2441461233/moodtracker/actions/runs/34102893976)与 [EAS 签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)均成功。IPA 已通过严格验签，**已确认在原内部测试组「正在测试」**；真机验收仍待完成。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)和 [iOS 发布记录](docs/ios-release.md)。
 
-历史 2.1.2（6）已于本次登录后台时确认在原「个人测试组」显示「正在测试」，上传时间为 2026-09-03 16:43（北京时间）。该版本统一了 Apple 心境的每日记录、月历 / 年像素与独立健康回顾。历史分发成功不能代表 2.1.3 已可更新。
+历史 2.1.2（6）已于本次登录后台时确认在原「个人测试组」显示「正在测试」，上传时间为 2026-09-03 16:43（北京时间）。该版本统一了 Apple 心境的每日记录、月历 / 年像素与独立健康回顾。后续 2.1.3（7）及 2.1.4（8）的分发已分别核实。
 
 ## 这一版有什么
 
 - **今日心情**：五档感受、七日回看、统一每日时间线、本周小结；已读取的 Apple 心境按日期与本地日记一起展示，并保留只读来源标识。
 - **三步记录**：选择心情 → 可选的 24 项活动 → 可选笔记。支持跳过选填、补记、编辑和删除确认；点叉直接关闭并放弃未保存的草稿。
-- **心情日历**：月历、十二个月的年像素、按日回看；“全部 / 本地 / Apple 健康”控制日历及期间回顾，关键词跨日期搜索与心情筛选只作用于记录列表。
+- **情绪记录**：默认按日期倒序展示全部历史时间线，可切换月历与十二个月的年像素按日回看；筛选默认收起。“全部 / 本地 / Apple 健康”控制来源，关键词与心情筛选只作用于记录列表。
 - **情绪洞察**：Apple 健康回顾按当下情绪 / 一天整体心情分别汇总原始愉悦度；本地周 / 月 / 90 天趋势、心情分布与活动关联保持独立，不混算。数据不足时留白，不生成虚构结论。
 - **我的空间**：本地称呼、浅色 / 深色 / 跟随系统、原生触感反馈。
 - **Apple 健康心境（2.1.2 修订）**：沿用一次明确开启后的自动同步与最近 365 天 / 5,000 条读取上限，不扩大权限范围。Apple 心境在前台内存中进入统一每日列表与日历，精确隐藏仍有对应本地日记的自身健康副本；外部记录不复制到本地、不导出、不写回。已开启的连接升级后保留，无需无故重新开启。后台通知由系统调度，不承诺秒级实时；iOS 18+ 完整原生包支持，网页版、Android 与 Expo Go 不支持。见 [接入边界](docs/apple-health.md)。
@@ -24,9 +24,9 @@
 
 ## 本地运行
 
-### 开发中的 iOS 桌面小组件
+### iOS 桌面小组件
 
-新增小号「快速记录」与大号「心情日历」：点小卡片直接打开记录弹框，点大卡片的日期查看当天本地心情。需重新构建含 WidgetKit 扩展的 iOS App，并为主 App / 扩展配置 App Group 签名；不包含在上方已上传的 2.1.3（7）中。使用、数据边界和验收见 [iOS 桌面小组件](docs/ios-widgets.md)。
+新增小号「快速记录」与大号「心情日历」：点小卡片直接打开记录弹框，点大卡片的日期查看当天本地心情。已包含在 2.1.4（8）的完整原生包中。更新后先打开 App 一次，再长按 iPhone 主屏幕添加小组件，搜索「心情日记」。使用、数据边界和验收见 [iOS 桌面小组件](docs/ios-widgets.md)。
 
 使用 Node.js 22 LTS 和 npm。
 
@@ -45,7 +45,7 @@ npm run android
 
 普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
 
-历史 **2.1.2（6）已在既有内部 TestFlight 测试组可用**。当前 **2.1.3（7）已构建验签并上传，尚待 Apple 处理结果与分发确认**。核实发布完成后，通过 **TestFlight → 情绪记录 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
+当前 **2.1.4（8）已在既有内部 TestFlight 测试组可用**。通过 **TestFlight → 情绪记录 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
 
 生产构建及本地验收：
 
@@ -97,7 +97,7 @@ npm run preview
 
 Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流模式；无服务器、数据库、支付服务或额外部署账户。
 
-另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[2.1.3 原生 CI](https://github.com/2441461233/moodtracker/actions/runs/34102893976)已在应用源码提交 `f8588fce54ae6fd706eccf2396e95600cd65ad1e` 上成功，实际编译 App、MoodHealth 模块和自动链接。该 CI 产物不是手机安装包，也不验证真实设备上的 HealthKit 通知；签名包与待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
+另一个 `verify-ios.yml` 工作流使用 macOS / Xcode 构建未签名的模拟器 App，检查真正的 Swift 编译与自动链接。[2.1.4 原生 CI](https://github.com/2441461233/moodtracker/actions/runs/34113819494)已在应用源码提交 `9125c45f101d4c8e29c233c10c8800254cf19cb5` 上成功，实际编译 App、MoodHealth / MoodWidgets 模块及嵌入的 WidgetKit 扩展。该 CI 产物不是手机安装包，也不验证真实设备上的 HealthKit 通知；签名包与待完成的真机验收见 [iOS 发布说明](docs/ios-release.md)。
 
 `scripts/prepare-web.mjs` 为 Expo 的静态输出添加中文元信息、Open Graph、manifest 和 Service Worker。离线缓存仅包含公开应用资源；版本由资源内容 hash 生成，不强制刷新正在填写的草稿。已有页面可能继续使用当前缓存版本，关闭所有该站点页面再重新打开即可激活已下载的新版本。
 
@@ -108,7 +108,7 @@ Pull Request 只检查构建，不发布。Pages 使用 GitHub Actions 工作流
 ```text
 App.tsx                   主题、导航、全局弹层
 src/components/           可复用组件与记录 / 详情 / 呼吸弹层
-src/screens/              今日、日历、洞察、设置
+src/screens/              今日、记录、洞察、设置
 src/context/              应用状态与异步操作
 src/storage/              兼容旧版的校验、队列、冲突检查
 src/health/               自动同步、只读统一时间线、健康写入映射、独立账本及有界重试

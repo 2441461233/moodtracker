@@ -1,31 +1,40 @@
 # iOS 2.1.4 发布与真机验收
 
-## 当前发布准备：2.1.4
+## 当前发布：2.1.4（8），内部 TestFlight 已可更新
 
 2026-09-07：合并记录页与 iOS 桌面小组件。记录页默认展示按日期倒序的全部历史时间线，筛选折叠；底部名称改为「记录」并保留原日历图标。共享弹框移除了未对齐的顶部装饰线。小号「快速记录」打开记录弹框，大号「心情日历」显示本地月历并链接到对应日期。
 
 - 最终组合版本 `npm run verify` 已通过：TypeScript、195 项业务 / 原生配置测试、Web 导出与 19 项网页测试，共 214 项。
 - 已从组合版本创建隔离目录并重新 prebuild，实际工程核验通过：两份 Widget Swift 源码、唯一扩展嵌入、主 App 依赖、URL Scheme、App Group 及主 App / 扩展 2.1.4 版本匹配。
-- 当前尚未开始正式签名构建。旧主 App profile 不含 App Group；需为主 App 更新 profile，并为 `QuickRecordWidget` 准备独立 profile，复用既有有效分发证书。开发者登录已失效，等待所有者在官方页面完成登录。
-- 目标仍为原 App `6776595613`、Team `9PB9F396XQ`、原「个人测试组」。真实 iPhone 小组件与升级交互仍待安装验收；未将模拟器编译或旧版上传当作本版可更新证明。
+- 应用源码已推送到 `main`，提交 `9125c45f101d4c8e29c233c10c8800254cf19cb5`；[网页回归与部署](https://github.com/2441461233/moodtracker/actions/runs/34113819475)成功。同一提交的[原生 CI 34113819494](https://github.com/2441461233/moodtracker/actions/runs/34113819494)也已成功，实际编译主 App、HealthKit、MoodWidgets 模块及嵌入的 WidgetKit 扩展。
+- GitHub 通过手机设备授权恢复登录，Apple Developer 使用 Chrome 中仍有效的原团队会话。已注册 App Group `group.com.zhenyu.moodjournal.app.widgets`（`38DNMWS632`）和扩展标识 `com.zhenyu.moodjournal.app.QuickRecordWidget`（`57DMQVSBPY`），主 App 与扩展均已关联该组。
+- 主 App profile `JHW9QHZK8M` 已重新生成，名称 `MoodTracker AppStore HealthKit Widgets 20260907`，页面状态 Active，保留 HealthKit；扩展 App Store profile `G4LLTV5L8F` 已生成，名称 `MoodTracker QuickRecordWidget AppStore 20260907`。两份均使用原分发证书 `N46K339LNH`，未生成或撤销分发证书。
+- 两份 `.mobileprovision` 已通过页面的标准下载操作取回，并完成本地校验：Team / Bundle ID、App Group、App Store 分发类型、有效期和原分发证书匹配；主 App 保留 HealthKit 与 Background Delivery，扩展没有 HealthKit。主 App profile UUID `199418ad-b04b-4acc-8939-d9b042da730e`，扩展 UUID `92763582-7213-44a8-ba5a-a1c2c3a1df7c`。本地凭据已配置为 `app` / `QuickRecordWidget` 双 target，文件在 Git 忽略范围内。
+- [2.1.4（8）正式 EAS 构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/362bcf87-a378-4316-af25-1a20b167f23f)已于 2026-09-07 13:58:16 UTC 完成，状态 `FINISHED`，源码精确匹配 `9125c45f101d4c8e29c233c10c8800254cf19cb5`。
+- 已下载上述精确 IPA，于 14:00:04 UTC 通过 `codesign --verify --deep --strict`。实际主 App 与 `QuickRecordWidget.appex` 均为 **2.1.4（8）**、最低 iOS 15.1、SDK `iphoneos26.2`；两个签名及内嵌 profiles 的 Team / Bundle ID / App Group 一致，签名叶证书存在于对应 profile。主 App 保留 HealthKit / Background Delivery，扩展不含 HealthKit；均为 App Store 分发，`get-task-allow=false`，主 App 的加密声明为 `false`，`moodjournal` URL scheme 存在。
+- IPA 为 13,509,382 字节，SHA-256：`ebeeebd179ca06d3f86563dbd05737faf776780f8876a61f1487ab161146a65e`。
+- [EAS 上传任务 41bf5573](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/41bf5573-0e57-4c9e-9895-9b26d124f1e8)已独立核实为 `FINISHED`，于 14:02:25 UTC 完成；App ID、构建 ID、2.1.4（8）与源码提交均精确匹配。2026-09-07 14:08 UTC，App Store Connect 上传表已显示新构建 `a750718b-a4e2-4e87-a3ac-a8ef37e98914`「完成」，上传时间 22:02（北京时间）。
+- **2026-09-07 14:09 UTC，已在[原「个人测试组」](https://appstoreconnect.apple.com/teams/93dd1b91-a79c-4c54-8ba3-0dd5bf8bc33a/apps/6776595613/testflight/groups/c3a1a107-7438-48ac-802c-e9634d77ba5a/builds)核实 2.1.4（8）显示「正在测试」、90 天后过期。** 原组仍为 1 个测试员，自动分发开启，未创建其他 App 或测试组；测试员页面还显示「已安装 2.1.4 (8)」。安装状态不代表交互验收通过。
+- 同日 14:08 UTC，[本构建的测试说明](https://appstoreconnect.apple.com/teams/93dd1b91-a79c-4c54-8ba3-0dd5bf8bc33a/apps/6776595613/testflight/ios/a750718b-a4e2-4e87-a3ac-a8ef37e98914)已显示「已保存」，包含记录页改动、两种小组件的添加方法及真机待测试内容。
+- 目标仍为原 App `6776595613`、Team `9PB9F396XQ`、原「个人测试组」。真实 iPhone 小组件与升级交互仍待用户验收；后台安装状态与功能验收分别记录。
 
 小组件实现与验证详见 [iOS 桌面小组件](ios-widgets.md)，记录页截图见 [记录页检查](calendar-records-audit-2026-09-07.md)。
 
-## 上一版本：2.1.3（7），已上传，等待 Apple 与测试组可用性确认
+## 上一版本：2.1.3（7），已在原内部测试组可用
 
 2026-09-07：本次包含原生日期与时间选择器、记录表单与键盘交互修复、选项排序和文案精简、视觉更新，以及透明页面切换时旧页叠加的修复。沿用原 App、Team、签名材料及内部「个人测试组」，不扩大健康权限或变更本地存储键。
 
-发布前完整 `npm run verify` 通过：TypeScript、179 项业务 / 原生配置测试、Web 导出与 19 项 Web 测试。此前已验证手机尺寸和宽屏下标签往返切换不叠页，日历月份状态保留。签名构建、IPA 核验与上传均已完成，仍需确认 Apple 处理和原测试组可用性，尚不能称为 TestFlight 已可更新。
+发布前完整 `npm run verify` 通过：TypeScript、179 项业务 / 原生配置测试、Web 导出与 19 项 Web 测试。此前已验证手机尺寸和宽屏下标签往返切换不叠页，日历月份状态保留。签名构建、IPA 核验与上传均已完成；2026-09-07 本次发布期间，已补充核实原测试组的分发状态为「正在测试」。
 
 - 应用源码已推送到 `main`，提交 `f8588fce54ae6fd706eccf2396e95600cd65ad1e`。[网页 CI 与部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)成功；同一提交的[独立 iOS CI](https://github.com/2441461233/moodtracker/actions/runs/34102893976)成功，实际编译 App 与 HealthKit 模块。
-- [EAS 构建 7d085be1](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)状态 `FINISHED`，版本 2.1.3（7），源码精确匹配上述提交。上传须明确使用这个构建，不重复创建，也不提交历史构建。
+- [EAS 构建 7d085be1](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)状态 `FINISHED`，版本 2.1.3（7），源码精确匹配上述提交。该历史构建已上传，无需重复创建或提交。
 - 已下载该确切构建的 IPA，于 2026-09-07 08:59 UTC 通过 `codesign --verify --deep --strict`；Bundle ID / Team / 版本 / build 匹配，实际签名与内嵌 profile 匹配，HealthKit 与 HealthKit Background Delivery 均为 `true`，`get-task-allow=false`，`ITSAppUsesNonExemptEncryption=false`。最低 iOS 15.1，实际 SDK 为 `iphoneos26.2`。
 - IPA 为 13,386,189 字节；SHA-256：`a5152988fc827ac0f15baf426b610e4c418bec77bce41288b3efca1470b5cbf3`。
 - [EAS 上传任务 bee97cf3](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/bee97cf3-06c9-4116-8466-123fe4f76f54)已独立核实为 `FINISHED`，完成于 2026-09-07 09:13:17.274 UTC；关联构建、2.1.3（7）、应用源码提交和 ASC App ID `6776595613` 均精确匹配。账号所有者已在本机一次性输入页完成上传身份验证，密码未写入仓库、聊天或本地文件，无需再次上传。
-- Apple 处理结果和原测试组分发仍待核实；App Store Connect 刷新后要求重新登录，已请所有者自行完成。真实 iPhone 升级、系统选择器、键盘与健康交互仍待验收。
+- 2026-09-07 已在原「个人测试组」确认 2.1.3（7）显示「正在测试」，ASC build ID `127ecbc1-91d3-41eb-b6ea-e539195b7ae3`。真实 iPhone 升级、系统选择器、键盘与健康交互仍待验收。
 - 本次登录 App Store Connect 后，已实际确认历史 2.1.2（6）在原「个人测试组」显示「正在测试」，上传日期为 2026-09-03 16:43（北京时间），ASC build ID 为 `3378cba6-44e4-4baa-8c4a-5b7f7aef6f96`；原组仍为 1 个测试员。下方 2.1.2 的旧记录是 2026-09-03 08:31 UTC 的阶段快照，后来已完成分发，不代表最新状态。
 
-使用已有 Xcode 26.2 构建镜像，满足截至本次发布核对的 [Apple SDK 最低要求](https://developer.apple.com/news/upcoming-requirements/)（Xcode / iOS SDK 26 或以上）。以下为历史记录，不能代表本次 2.1.3 的发布状态。
+使用已有 Xcode 26.2 构建镜像，满足截至本次发布核对的 [Apple SDK 最低要求](https://developer.apple.com/news/upcoming-requirements/)（Xcode / iOS SDK 26 或以上）。以下为更早版本的历史记录，各版本证据独立保留。
 
 ## 历史修订：2.1.2（6）统一健康时间线（08:31 UTC 阶段快照）
 
@@ -63,7 +72,7 @@
 - Bundle ID：`com.zhenyu.moodjournal.app`
 - App Store Connect App ID：`6776595613`（现有“情绪记录”）
 - Apple Developer Team：`9PB9F396XQ`
-- 当前已签名并上传、待分发确认版本：2.1.3（build 7），EAS production 已完成远端版本号递增。历史内部 TestFlight 版本为 2.1.2（build 6）、2.1.1（build 5）及 2.1.0（build 4）。
+- 当前内部 TestFlight 可更新版本：2.1.4（build 8），EAS production 已完成远端版本号递增。历史内部 TestFlight 版本为 2.1.3（build 7）、2.1.2（build 6）、2.1.1（build 5）及 2.1.0（build 4）。
 - 保留日记存储键 `mood_entries` 与原有数据结构。请用户先导出备份；不要让用户卸载旧 App 来更新。
 
 Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pages 的发布也不是 iOS 发布。
@@ -109,7 +118,7 @@ Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pag
 
 production 使用 `credentialsSource=local`，由本地提供签名材料，仍由 EAS 云端构建机完成构建与签名，不是本机 Xcode 构建。`credentials.json` 已加入忽略规则；签名材料和密码不进入 Git 仓库。
 
-2.1.0（4）、2.1.1（5）和 2.1.2（6）均已上传并在原内部测试组可用，不要重复构建或提交历史版本。当前 2.1.3（7）已构建、验签并上传，无需重复提交或创建同一应用源码的构建。以下为后续新原生版本的通用步骤：先安装并核实 EAS CLI 23.2.0，核对账号与签名凭据，再在项目目录执行：
+2.1.0（4）至当前 2.1.4（8）均已上传并在原内部测试组可用，无需重复提交或创建同一应用源码的构建。以下为后续新原生版本的通用步骤：先安装并核实 EAS CLI 23.2.0，核对账号与签名凭据，再在项目目录执行：
 
 ```sh
 eas --version
@@ -119,13 +128,13 @@ eas build --platform ios --profile production --non-interactive --freeze-credent
 eas submit --platform ios --profile production --id "$VERIFIED_EAS_BUILD_ID" --non-interactive --wait --no-auto-testflight-setup
 ```
 
-提交时明确选择已核对的新构建，不凭 `--latest` 猜测是否为正确包。应用专用密码仅通过受控上传进程的环境传入，不放入命令行参数、日志、`eas.json` 或仓库。历史 2.1.1（5）、2.1.2（6）和当前 2.1.3（7）均已分别核验内嵌 profile 与最终签名 IPA 的 HealthKit、HealthKit Background Delivery 两项权限，以及 Team / Bundle ID 匹配；以后每个新包仍需独立核验。
+提交时明确选择已核对的新构建，不凭 `--latest` 猜测是否为正确包。应用专用密码仅通过受控上传进程的环境传入，不放入命令行参数、日志、`eas.json` 或仓库。2.1.1（5）至 2.1.4（8）均已分别核验主 App 内嵌 profile 与最终签名 IPA 的 HealthKit、HealthKit Background Delivery 及 Team / Bundle ID。2.1.4 还已独立核验主 App 与扩展的 App Group、版本和签名证书；以后每个新包仍需独立核验。
 
 simulator / production 均固定 Node.js `22.23.1` 与 EAS 镜像 `macos-sequoia-15.6-xcode-26.2`，不使用 `latest` 镜像别名。上传前仍须核实符合 Apple 当时的 SDK 最低要求。EAS 设置 `MOODTRACKER_BUILD_TARGET=native`，`app.config.js` 仅在原生构建时强制空 base URL，避免携带 GitHub Pages 的 `/moodtracker/` 子路径；不向 EAS 传入空环境变量值。
 
-EAS Submit 只负责上传二进制。每次上传后都需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，并确认既有内部 TestFlight 组的可用性。历史 2.1.1（5）和 2.1.2（6）已核实内部 TestFlight 可用，当前 2.1.3（7）已上传、待 Apple 与原测试组确认；不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
+EAS Submit 只负责上传二进制。每次上传后都需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，并确认既有内部 TestFlight 组的可用性。当前 2.1.4（8）及历史 2.1.0（4）至 2.1.3（7）均已核实内部 TestFlight 可用；不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
 
-已设置 `ios.config.usesNonExemptEncryption=false`，历史 2.1.0、2.1.1（5）、2.1.2（6）和当前 2.1.3（7）最终签名 IPA 均已核实 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
+已设置 `ios.config.usesNonExemptEncryption=false`，2.1.0（4）至当前 2.1.4（8）的最终签名 IPA 均已核实 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
 
 当前代码与锁定依赖未发现自定义加密、VPN 或非系统加密实现。Expo 的摘要计算使用 Apple CryptoKit，网络使用系统 URLSession；MoodHealth 使用系统 HealthKit。Apple 明确说明，仅使用 Apple 操作系统提供的加密时，无需向 App Store Connect 上传加密文档；无加密或仅使用豁免加密可将该键设为 `NO`。这不是“完全没有加密”或免除所有出口合规义务的声明；依赖、加密功能或分发要求变化时必须重新核对。[Apple 文档要求](https://developer.apple.com/help/app-store-connect/reference/app-information/export-compliance-documentation-for-encryption)、[Apple 声明规则](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations)
 
@@ -155,7 +164,7 @@ App Store 正式发布还需要元数据、截图、隐私信息、审核和分�
 18. 验证每日整体心情优先规则、当下情绪回退规则、`valence × 2 + 3` 的近似色彩与期间日等权；Apple 原始愉悦度不可被该映射覆盖或回写。
 19. Apple 健康回顾的两种 kind 分别计算原始样本均值；本地趋势、分布和活动关联不因 Apple 样本加入而变化。365 天 / 5,000 条边界、读取中、权限未知和读取失败均不谎报全量或确定空白。
 
-最新已核实在原内部测试组可用的版本为历史 2.1.2（6）；当前 2.1.3（7）已构建、验签并上传，但分发尚未核实，不应提前让用户寻找此版本的更新。后续实际核实分发后，更新仍通过 **TestFlight → 情绪记录 → 更新**，不要卸载旧 App。已开启自动同步者继续沿用连接；从未开启者才需要一次明确开启和系统授权。之后前台响应变化、回到 App 自动补齐，后台和彻底关闭后的时效仍受 iOS 限制。安装新构建不会使旧的过期 build 自行续期。
+当前 2.1.4（8）已核实在原内部测试组「正在测试」，测试员页面显示已安装。更新通过 **TestFlight → 情绪记录 → 更新**，不要卸载旧 App。已开启自动同步者继续沿用连接；从未开启者才需要一次明确开启和系统授权。之后前台响应变化、回到 App 自动补齐，后台和彻底关闭后的时效仍受 iOS 限制。安装新构建不会使旧的过期 build 自行续期。
 
 ## 官方参考
 
