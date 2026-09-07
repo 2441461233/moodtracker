@@ -4,7 +4,7 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
-**当前发布状态（2026-09-07）**：2.1.3（7）包含系统日期 / 时间选择器、点叉直接关闭记录、日历与键盘交互修复、活动排序、文案与说明层级精简、视觉更新，以及日历切换洞察时旧页叠加的修复。198 项回归、类型检查、Web 导出均通过；[网页已部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)，[独立 iOS 编译](https://github.com/2441461233/moodtracker/actions/runs/34102893976)与 [EAS 签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)均成功。IPA 已通过严格验签，**等待上传身份验证，尚未在 TestFlight 分发**；真机验收仍待完成。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)和 [iOS 发布记录](docs/ios-release.md)。
+**当前发布状态（2026-09-07）**：2.1.3（7）包含系统日期 / 时间选择器、点叉直接关闭记录、日历与键盘交互修复、活动排序、文案与说明层级精简、视觉更新，以及日历切换洞察时旧页叠加的修复。198 项回归、类型检查、Web 导出均通过；[网页已部署](https://github.com/2441461233/moodtracker/actions/runs/34102894043)，[独立 iOS 编译](https://github.com/2441461233/moodtracker/actions/runs/34102893976)与 [EAS 签名构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/7d085be1-1e6a-4e4b-99ad-bc06473b80fb)均成功。IPA 已通过严格验签，**上传已完成，等待 Apple 处理结果与原测试组分发确认**；真机验收仍待完成。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)和 [iOS 发布记录](docs/ios-release.md)。
 
 历史 2.1.2（6）已于本次登录后台时确认在原「个人测试组」显示「正在测试」，上传时间为 2026-09-03 16:43（北京时间）。该版本统一了 Apple 心境的每日记录、月历 / 年像素与独立健康回顾。历史分发成功不能代表 2.1.3 已可更新。
 
@@ -39,7 +39,7 @@ npm run android
 
 普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
 
-历史 **2.1.2（6）已在既有内部 TestFlight 测试组可用**。当前 **2.1.3（7）已构建验签，尚待上传身份验证与分发确认**。核实发布完成后，通过 **TestFlight → 情绪记录 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
+历史 **2.1.2（6）已在既有内部 TestFlight 测试组可用**。当前 **2.1.3（7）已构建验签并上传，尚待 Apple 处理结果与分发确认**。核实发布完成后，通过 **TestFlight → 情绪记录 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
 
 生产构建及本地验收：
 
