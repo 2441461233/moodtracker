@@ -1,4 +1,4 @@
-import React, { ComponentProps, PropsWithChildren } from 'react';
+import React, { ComponentProps, PropsWithChildren, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { font, MOOD_APPEARANCE, useTheme } from '../theme';
 import { EmotionId } from '../types';
+import { Gradient } from './effects';
 
 export function Icon({ name, size = 22, color }: { name: string; size?: number; color?: string }) {
   const theme = useTheme();
@@ -39,13 +40,70 @@ export function Label({
     </Text>
   );
 }
+/** 卡片顶部的高光线，让深色卡片有“被光照到”的层次。 */
+function CardHighlight() {
+  const theme = useTheme();
+  if (!theme.dark) return null;
+  return (
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', top: 0, left: 30, right: 30, height: 1 }}
+    >
+      <Gradient
+        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.16)', 'rgba(255,255,255,0)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{ flex: 1 }}
+      />
+    </View>
+  );
+}
 export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
   const theme = useTheme();
   return (
     <View
-      style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }, style]}
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.cardBorder,
+          boxShadow: theme.dark
+            ? '0 12px 40px rgba(0, 0, 0, 0.34)'
+            : '0 14px 36px rgba(60, 54, 105, 0.09)',
+        },
+        style,
+      ]}
     >
+      <CardHighlight />
       {children}
+    </View>
+  );
+}
+export function Disclosure({ title, children }: PropsWithChildren<{ title: string }>) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ expanded }}
+        aria-expanded={expanded}
+        onPress={() => setExpanded((value) => !value)}
+        style={({ pressed }) => ({
+          minHeight: 44,
+          flexDirection: 'row',
+          alignItems: 'center',
+          alignSelf: 'flex-start',
+          gap: 6,
+          opacity: pressed ? 0.6 : 1,
+        })}
+      >
+        <Label muted style={{ fontSize: 12, lineHeight: 20 }}>
+          {title}
+        </Label>
+        <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} />
+      </Pressable>
+      {expanded && <View style={{ gap: 8, paddingBottom: 12 }}>{children}</View>}
     </View>
   );
 }
@@ -68,22 +126,30 @@ export function Button({
   label?: string;
 }>) {
   const theme = useTheme();
-  const color =
-    kind === 'primary'
-      ? theme.background === '#171821'
-        ? '#252039'
-        : '#FFFFFF'
-      : kind === 'danger'
-        ? theme.danger
-        : theme.accentText;
+  const primary = kind === 'primary';
+  const color = primary
+    ? theme.dark
+      ? '#17123A'
+      : '#FFFFFF'
+    : kind === 'danger'
+      ? theme.danger
+      : theme.accentText;
   const backgroundColor =
-    kind === 'primary'
-      ? theme.accent
-      : kind === 'secondary'
-        ? theme.accentSoft
-        : kind === 'danger'
-          ? theme.dangerSoft
-          : 'transparent';
+    kind === 'secondary'
+      ? theme.accentSoft
+      : kind === 'danger'
+        ? theme.dangerSoft
+        : 'transparent';
+  const content = busy ? (
+    <ActivityIndicator color={color} size="small" />
+  ) : icon ? (
+    <Icon name={icon} size={19} color={color} />
+  ) : null;
+  const text = (
+    <Label style={{ color, fontWeight: '600', fontSize: 14, flexShrink: 1, textAlign: 'center' }}>
+      {children}
+    </Label>
+  );
   return (
     <Pressable
       accessibilityRole="button"
@@ -92,23 +158,36 @@ export function Button({
       disabled={disabled || busy}
       onPress={onPress}
       style={({ pressed, hovered }) => [
-        styles.button,
         {
-          backgroundColor,
+          borderRadius: 15,
           opacity: disabled ? 0.4 : 1,
-          transform: [{ translateY: hovered ? -1 : 0 }, { scale: pressed ? 0.98 : 1 }],
+          transform: [{ translateY: hovered && !disabled ? -1 : 0 }, { scale: pressed ? 0.98 : 1 }],
+        },
+        primary && {
+          boxShadow: theme.dark
+            ? '0 8px 26px rgba(139, 124, 246, 0.42)'
+            : '0 10px 24px rgba(108, 99, 223, 0.36)',
         },
         style,
       ]}
     >
-      {busy ? (
-        <ActivityIndicator color={color} size="small" />
-      ) : icon ? (
-        <Icon name={icon} size={19} color={color} />
-      ) : null}
-      <Label style={{ color, fontWeight: '600', fontSize: 14, flexShrink: 1, textAlign: 'center' }}>
-        {children}
-      </Label>
+      {primary ? (
+        <Gradient
+          colors={[theme.accentFrom, theme.accentTo]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          borderRadius={15}
+          style={styles.button}
+        >
+          {content}
+          {text}
+        </Gradient>
+      ) : (
+        <View style={[styles.button, { backgroundColor }]}>
+          {content}
+          {text}
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -138,6 +217,7 @@ export function IconButton({
         {
           opacity: disabled ? 0.3 : 1,
           backgroundColor: selected || hovered || pressed ? theme.accentSoft : theme.subtle,
+          borderColor: theme.cardBorder,
         },
       ]}
     >
@@ -162,11 +242,12 @@ export function MoodIcon({
         width: size,
         height: size,
         borderRadius: size * 0.36,
-        backgroundColor: theme.background === '#171821' ? mood.dark : mood.soft,
+        backgroundColor: theme.dark ? mood.dark : mood.soft,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: selected ? 2 : 0,
         borderColor: mood.color,
+        boxShadow: `0 0 ${Math.round(size * 0.55)}px ${mood.glow}`,
       }}
     >
       <Icon name={mood.icon} size={size * 0.66} color={mood.color} />
@@ -187,7 +268,10 @@ export function SectionTitle({
   return (
     <View style={styles.sectionTitle}>
       <View style={{ flex: 1, gap: 4 }}>
-        <Label accessibilityRole="header" style={{ fontSize: 17, fontWeight: '600' }}>
+        <Label
+          accessibilityRole="header"
+          style={{ fontSize: 17, fontWeight: '600', letterSpacing: -0.2 }}
+        >
           {title}
         </Label>
         {subtitle && (
@@ -229,18 +313,21 @@ export function EmptyState({
         gap: 12,
       }}
     >
-      <View
+      <Gradient
+        colors={theme.dark ? [theme.accentSoft, theme.subtle] : [theme.accentSoft, theme.surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        borderRadius={23}
         style={{
-          width: 58,
-          height: 58,
-          borderRadius: 21,
-          backgroundColor: theme.accentSoft,
+          width: 62,
+          height: 62,
           alignItems: 'center',
           justifyContent: 'center',
+          boxShadow: theme.dark ? '0 0 30px rgba(139, 124, 246, 0.22)' : undefined,
         }}
       >
-        <Icon name={icon} size={29} color={theme.accentText} />
-      </View>
+        <Icon name={icon} size={30} color={theme.accentText} />
+      </Gradient>
       <Label style={{ fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{title}</Label>
       <Label muted style={{ maxWidth: 320, fontSize: 13, lineHeight: 22, textAlign: 'center' }}>
         {description}
@@ -257,10 +344,12 @@ export function Segment<T extends string>({
   options,
   value,
   onChange,
+  disabled,
 }: {
   options: { id: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
+  disabled?: boolean;
 }) {
   const theme = useTheme();
   return (
@@ -272,7 +361,9 @@ export function Segment<T extends string>({
         maxWidth: '100%',
         backgroundColor: theme.subtle,
         padding: 4,
-        borderRadius: 13,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: theme.cardBorder,
         alignSelf: 'flex-start',
       }}
     >
@@ -280,10 +371,11 @@ export function Segment<T extends string>({
         <Pressable
           key={option.id}
           accessibilityRole="tab"
-          accessibilityState={{ selected: value === option.id }}
+          accessibilityState={{ selected: value === option.id, disabled }}
+          disabled={disabled}
           onPress={() => onChange(option.id)}
           style={({ pressed }) => ({
-            minHeight: 36,
+            minHeight: 44,
             minWidth: 62,
             maxWidth: '100%',
             flexShrink: 1,
@@ -292,6 +384,10 @@ export function Segment<T extends string>({
             justifyContent: 'center',
             borderRadius: 10,
             backgroundColor: value === option.id ? theme.surface : 'transparent',
+            boxShadow:
+              value === option.id && !theme.dark
+                ? '0 3px 10px rgba(60, 54, 105, 0.12)'
+                : undefined,
             opacity: pressed ? 0.6 : 1,
           })}
         >
@@ -311,12 +407,12 @@ export function Segment<T extends string>({
 }
 const styles = StyleSheet.create({
   text: { fontFamily: font, fontSize: 14, lineHeight: 21 },
-  card: { padding: 24, borderRadius: 24, borderWidth: 1 },
+  card: { padding: 24, borderRadius: 26, borderWidth: 1 },
   button: {
     minHeight: 44,
     paddingVertical: 11,
     paddingHorizontal: 18,
-    borderRadius: 13,
+    borderRadius: 15,
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
@@ -326,6 +422,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },

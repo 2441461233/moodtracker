@@ -5,6 +5,7 @@ import { Page } from '../components/Page';
 import {
   Button,
   Card,
+  Disclosure,
   EmptyState,
   Icon,
   IconButton,
@@ -18,7 +19,13 @@ import { AppleHealthReview } from '../components/AppleHealthReview';
 import { useTimeline } from '../health/useTimeline';
 import { timelineInRange } from '../health/timeline';
 import { addDays, formatDate, startOfDay, startOfWeek } from '../lib/dates';
-import { activityInsights, dailyAverage, entriesInRange, groupByDay } from '../lib/insights';
+import {
+  activityInsights,
+  dailyAverage,
+  emotionForScore,
+  entriesInRange,
+  groupByDay,
+} from '../lib/insights';
 import { MOOD_APPEARANCE, useLayout, useTheme } from '../theme';
 import { EmotionId } from '../types';
 
@@ -44,7 +51,6 @@ export default function InsightsScreen() {
   const { desktop, compact } = useLayout();
   const [period, setPeriod] = useState<Period>('week');
   const [offset, setOffset] = useState(0);
-  const [methodology, setMethodology] = useState(false);
   const [allFactors, setAllFactors] = useState(false);
   const [start, end] = getRange(period, offset, now);
   const [previousStart, previousEnd] = getRange(period, offset - 1, now);
@@ -61,6 +67,7 @@ export default function InsightsScreen() {
       ? average - previousAverage
       : null;
   const factors = activityInsights(periodEntries);
+  const averageEmotion = average === null ? null : emotionForScore(average);
   const counts = periodEntries.reduce(
     (result, entry) => {
       result[entry.emotionId] = (result[entry.emotionId] ?? 0) + 1;
@@ -143,15 +150,24 @@ export default function InsightsScreen() {
               <Label muted style={{ fontSize: 13 }}>
                 {health.enabled ? '本地日均心情' : '平均心情'}
               </Label>
-              <Label
-                style={{ fontSize: 46, lineHeight: 55, letterSpacing: -1.8, fontWeight: '600' }}
-              >
-                {average === null ? '—' : average.toFixed(1)}
-                <Label muted style={{ fontSize: 14 }}>
-                  {' '}
-                  / 5
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 13 }}>
+                <Label
+                  style={{
+                    fontSize: 52,
+                    lineHeight: 60,
+                    letterSpacing: -2,
+                    fontWeight: '700',
+                    color: averageEmotion ? MOOD_APPEARANCE[averageEmotion].color : theme.text,
+                  }}
+                >
+                  {average === null ? '—' : average.toFixed(1)}
+                  <Label muted style={{ fontSize: 14 }}>
+                    {' '}
+                    / 5
+                  </Label>
                 </Label>
-              </Label>
+                {averageEmotion && <MoodIcon id={averageEmotion} size={44} />}
+              </View>
             </View>
             <View
               style={{
@@ -197,62 +213,12 @@ export default function InsightsScreen() {
             </View>
           )}
         </Card>
-        <Card style={{ flex: desktop ? 1 : undefined, gap: 21 }}>
-          <SectionTitle title="认识自己，是个慢过程" subtitle="你的记录会让这里慢慢丰富起来" />
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-            <Label
-              style={{ fontSize: 40, lineHeight: 49, fontWeight: '600', color: theme.accentText }}
-            >
-              {days}
-            </Label>
-            <Label muted style={{ fontSize: 12 }}>
-              天的真实感受
-            </Label>
-          </View>
-          {[
-            { days: 3, title: '看见情绪', hint: '从几个真实的瞬间开始' },
-            { days: 7, title: '初见规律', hint: '给一周的自己一点回顾' },
-            { days: 14, title: '发现关联', hint: '慢慢留意活动与感受' },
-            { days: 30, title: '了解更多', hint: '积累更丰富的生活切片' },
-          ].map((item) => (
-            <View
-              key={item.days}
-              style={{ flexDirection: 'row', gap: 12, alignItems: 'center', opacity: 1 }}
-            >
-              <View
-                style={{
-                  width: 31,
-                  height: 31,
-                  backgroundColor: days >= item.days ? theme.accentSoft : theme.subtle,
-                  borderRadius: 11,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Icon
-                  name={days >= item.days ? 'check' : 'circle-small'}
-                  color={days >= item.days ? theme.accentText : theme.muted}
-                  size={19}
-                />
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Label style={{ fontSize: 12, fontWeight: '600' }}>{item.title}</Label>
-                <Label muted style={{ fontSize: 10 }}>
-                  {item.hint}
-                </Label>
-              </View>
-              <Label muted style={{ fontSize: 10 }}>
-                {item.days} 天
-              </Label>
-            </View>
-          ))}
-          <Label muted style={{ fontSize: 10, lineHeight: 18 }}>
-            按当前周期的记录天数计算。这不是任务清单，按自己的节奏就好。
-          </Label>
-        </Card>
       </View>
+      <Label muted style={{ fontSize: 12, lineHeight: 21, paddingHorizontal: 4 }}>
+        当前周期已记录 {days} 天 · {periodEntries.length} 条本地日记。仅根据已有记录整理趋势。
+      </Label>
       <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 24 }}>
-        <Card style={{ flex: 1 }}>
+        <Card style={{ flex: desktop ? 1 : undefined }}>
           <SectionTitle
             title="心情的不同颜色"
             subtitle={`${periodEntries.length} 条${health.enabled ? '本地日记' : '记录'} · 每一种感受都被认真对待`}
@@ -273,8 +239,8 @@ export default function InsightsScreen() {
                     </View>
                     <View
                       style={{
-                        height: 6,
-                        borderRadius: 4,
+                        height: 8,
+                        borderRadius: 5,
                         backgroundColor: theme.subtle,
                         overflow: 'hidden',
                       }}
@@ -283,8 +249,9 @@ export default function InsightsScreen() {
                         style={{
                           height: '100%',
                           width: `${share * 100}%`,
-                          borderRadius: 4,
+                          borderRadius: 5,
                           backgroundColor: MOOD_APPEARANCE[id].color,
+                          boxShadow: count ? `0 0 10px ${MOOD_APPEARANCE[id].glow}` : undefined,
                         }}
                       />
                     </View>
@@ -294,7 +261,7 @@ export default function InsightsScreen() {
             })}
           </View>
         </Card>
-        <Card style={{ flex: 1 }}>
+        <Card style={{ flex: desktop ? 1 : undefined }}>
           <SectionTitle
             title="什么，和你的心情有关？"
             subtitle={
@@ -370,39 +337,26 @@ export default function InsightsScreen() {
           )}
         </Card>
       </View>
-      <View>
-        <Button
-          kind="ghost"
-          onPress={() => setMethodology(!methodology)}
-          icon="information-outline"
-          style={{ alignSelf: 'center' }}
-        >
-          {methodology ? '收起说明' : '这些数字，是怎么得来的？'}
-        </Button>
-        {methodology && (
-          <Card style={{ marginTop: 15, gap: 12 }}>
-            <Label style={{ fontWeight: '600', fontSize: 14 }}>透明一点，安心一点</Label>
-            {health.enabled && (
-              <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
-                Apple
-                健康回顾单独汇总已读取、去重后的样本：“当下情绪”与“一天整体心情”各自按样本计算原始愉悦度均值。下面的五档分数、日均权重和活动差值只适用于本地日记。
-              </Label>
-            )}
-            <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
-              五档心情仅用于整理记录：很开心 5、还不错 4、还好 3、有点烦 2、很难过
-              1。先计算每天的平均分，再对有记录的日子取平均；多记几次不会让那一天占更大权重。
-            </Label>
-            <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
-              活动差值 = 有该活动的记录日日均值 −
-              无该活动的记录日日均值。它可能受到其他因素影响，不能证明这个活动导致了心情变化。记录不足时不推断，不使用
-              AI，不发送情绪数据。
-            </Label>
-            <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
-              分数不是对生活的评分。本应用用于自我记录与觉察，不提供诊断、治疗或医疗建议。
-            </Label>
-          </Card>
+      <Disclosure title="统计说明">
+        {health.enabled && (
+          <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
+            Apple
+            健康回顾单独汇总已读取、去重后的样本：“当下情绪”与“一天整体心情”各自按样本计算原始愉悦度均值。下面的五档分数、日均权重和活动差值只适用于本地日记。
+          </Label>
         )}
-      </View>
+        <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
+          五档心情仅用于整理记录：很开心 5、还不错 4、还好 3、有点烦 2、很难过
+          1。先计算每天的平均分，再对有记录的日子取平均；多记几次不会让那一天占更大权重。
+        </Label>
+        <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
+          活动差值 = 有该活动的记录日日均值 −
+          无该活动的记录日日均值。它可能受到其他因素影响，不能证明这个活动导致了心情变化。记录不足时不推断，不使用
+          AI，不发送情绪数据。
+        </Label>
+        <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
+          分数不是对生活的评分。本应用用于自我记录与觉察，不提供诊断、治疗或医疗建议。
+        </Label>
+      </Disclosure>
     </Page>
   );
 }

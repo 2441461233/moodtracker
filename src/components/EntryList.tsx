@@ -35,12 +35,27 @@ export function EntryList({
                 padding: 16,
                 borderRadius: 18,
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor: theme.cardBorder,
                 backgroundColor: hovered ? theme.subtle : theme.surface,
+                boxShadow: theme.dark ? '0 6px 20px rgba(0, 0, 0, 0.22)' : undefined,
                 opacity: pressed ? 0.72 : 1,
                 gap: 14,
+                overflow: 'hidden',
               })}
             >
+              <View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 14,
+                  bottom: 14,
+                  width: 3,
+                  borderRadius: 2,
+                  backgroundColor: mood.color,
+                  opacity: 0.85,
+                }}
+              />
               <MoodIcon id={entry.emotionId} size={46} />
               <View style={{ flex: 1, minWidth: 0, gap: 7 }}>
                 <View

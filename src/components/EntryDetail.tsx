@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useMood } from '../context/MoodContext';
 import { getActivity, getActivityIds } from '../data/activities';
 import { formatDate, formatTime } from '../lib/dates';
@@ -14,8 +14,22 @@ export function EntryDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const lock = useRef(false);
+  const [visible, setVisible] = useState(true);
+  const editPending = useRef(false);
   if (!detail) return null;
   const entry = detail;
+  const edit = () => {
+    if (editPending.current) return;
+    editPending.current = true;
+    if (Platform.OS === 'ios') setVisible(false);
+    else finishEditingTransition();
+  };
+  const finishEditingTransition = () => {
+    if (!editPending.current) return;
+    editPending.current = false;
+    openDetail(null);
+    openComposer({ entry });
+  };
   const remove = async () => {
     if (lock.current) return;
     lock.current = true;
@@ -35,6 +49,9 @@ export function EntryDetail() {
   return (
     <Sheet
       title="一个被记住的瞬间"
+      visible={visible}
+      onDismiss={finishEditingTransition}
+      dismissDisabled={busy || !visible}
       onClose={() => {
         if (!busy) openDetail(null);
       }}
@@ -70,14 +87,7 @@ export function EntryDetail() {
               <Button kind="danger" onPress={() => setConfirm(true)} icon="trash-can-outline">
                 删除
               </Button>
-              <Button
-                onPress={() => {
-                  openDetail(null);
-                  openComposer({ entry });
-                }}
-                icon="pencil-outline"
-                style={{ flex: 1 }}
-              >
+              <Button onPress={edit} icon="pencil-outline" style={{ flex: 1 }}>
                 编辑记录
               </Button>
             </View>

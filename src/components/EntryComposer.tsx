@@ -1,12 +1,14 @@
 import React, { useRef, useState } from 'react';
-import { Platform, Pressable, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useMood } from '../context/MoodContext';
 import { EmotionId, MoodEntry } from '../types';
 import { ACTIVITIES, getActivityIds } from '../data/activities';
 import { dayKey, formatTime, parseEntryTime } from '../lib/dates';
 import { font, MOOD_APPEARANCE, useTheme } from '../theme';
 import { Button, Icon, Label, MoodIcon } from './ui';
+import { Gradient } from './effects';
 import { Sheet } from './Sheet';
+import { EntryDateTimeFields } from './EntryDateTimeFields';
 
 export function EntryComposer() {
   const { composer, closeComposer, persistEntry, feedback, now } = useMood();
@@ -25,24 +27,19 @@ export function EntryComposer() {
   const [showAll, setShowAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [discard, setDiscard] = useState(false);
   const lock = useRef(false);
+  const scroll = useRef<ScrollView>(null);
   const id = useRef(
     entry?.id ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`,
   );
-  const dirty =
-    note !== (entry?.note ?? '') ||
-    activities.join(',') !== (entry ? getActivityIds(entry).join(',') : '') ||
-    emotion !== (entry?.emotionId ?? composer?.emotionId) ||
-    date !== dayKey(initialDate) ||
-    time !== initialTime;
   const requestClose = () => {
-    if (saving) return;
-    if (dirty) setDiscard(true);
-    else closeComposer();
+    if (lock.current) return;
+    Keyboard.dismiss();
+    closeComposer();
   };
   const save = async () => {
     if (!emotion || lock.current) return;
+    Keyboard.dismiss();
     let parsed: Date;
     try {
       parsed = parseEntryTime(date, time);
@@ -78,10 +75,10 @@ export function EntryComposer() {
       setSaving(false);
     }
   };
-  const headings = ['此刻，你感觉怎么样？', '是什么陪伴了这一刻？', '想留下一点什么吗？'];
+  const headings = ['此刻，你感觉怎么样？', '这份心情和什么有关？', '想留下一点什么吗？'];
   const hints = [
     '选一个最接近的感受，不需要想太多。',
-    '可以多选，也可以什么都不选。',
+    '可能影响心情的事情，可多选或跳过。',
     '不必写得很好，真实就已经足够。',
   ];
   const inputStyle = {
@@ -92,90 +89,83 @@ export function EntryComposer() {
     borderColor: theme.border,
     borderRadius: 14,
     padding: 14,
-    fontSize: 14,
+    fontSize: 16,
     minHeight: 48,
     minWidth: 0,
   } as const;
   return (
     <Sheet
       scrollKey={step}
+      scrollRef={scroll}
+      dismissDisabled={saving}
+      contentDisabled={saving}
       title={entry ? '编辑这一刻' : '记录这一刻'}
       onClose={requestClose}
       footer={
-        discard ? (
-          <View style={{ gap: 12 }}>
-            <Label style={{ textAlign: 'center', fontSize: 13 }}>
-              这一刻还没有保存，要保留继续写吗？
+        <View style={{ gap: 12 }}>
+          {!!error && (
+            <Label
+              accessibilityRole="alert"
+              style={{ color: theme.danger, fontSize: 12, lineHeight: 20 }}
+            >
+              {error}
             </Label>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Button kind="secondary" onPress={() => setDiscard(false)} style={{ flex: 1 }}>
-                继续记录
-              </Button>
-              <Button kind="danger" onPress={closeComposer} style={{ flex: 1 }}>
-                放弃修改
-              </Button>
-            </View>
-          </View>
-        ) : (
-          <View style={{ gap: 12 }}>
-            {!!error && (
-              <Label
-                accessibilityRole="alert"
-                style={{ color: theme.danger, fontSize: 12, lineHeight: 20 }}
-              >
-                {error}
-              </Label>
-            )}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              {step > 0 && (
-                <Button
-                  onPress={() => setStep(step - 1)}
-                  kind="secondary"
-                  icon="arrow-left"
-                  disabled={saving}
-                >
-                  上一步
-                </Button>
-              )}
+          )}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {step > 0 && (
               <Button
-                onPress={step === 2 ? save : () => setStep(step + 1)}
-                disabled={!emotion}
-                busy={saving}
-                icon={step === 2 ? 'check' : 'arrow-right'}
-                style={{ flex: 1 }}
-              >
-                {step === 2 ? (entry ? '保存修改' : '保存这一刻') : '继续'}
-              </Button>
-            </View>
-            {step < 2 && emotion && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="跳过选填，直接保存"
+                onPress={() => setStep(step - 1)}
+                kind="secondary"
+                icon="arrow-left"
                 disabled={saving}
-                onPress={save}
-                style={{ minHeight: 34, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Label muted style={{ fontSize: 12 }}>
-                  跳过选填，直接记录
-                </Label>
-              </Pressable>
+                上一步
+              </Button>
             )}
+            <Button
+              onPress={step === 2 ? save : () => setStep(step + 1)}
+              disabled={!emotion}
+              busy={saving}
+              icon={step === 2 ? 'check' : 'arrow-right'}
+              style={{ flex: 1 }}
+            >
+              {saving ? '正在保存…' : step === 2 ? (entry ? '保存修改' : '保存这一刻') : '继续'}
+            </Button>
           </View>
-        )
+          {step < 2 && emotion && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="跳过选填，直接保存"
+              disabled={saving}
+              onPress={save}
+              style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Label muted style={{ fontSize: 12 }}>
+                跳过选填，直接记录
+              </Label>
+            </Pressable>
+          )}
+        </View>
       }
     >
       <View style={{ flexDirection: 'row', gap: 7, marginBottom: 24, alignSelf: 'center' }}>
-        {[0, 1, 2].map((item) => (
-          <View
-            key={item}
-            style={{
-              height: 5,
-              width: step === item ? 27 : 8,
-              borderRadius: 4,
-              backgroundColor: step === item ? theme.accent : theme.border,
-            }}
-          />
-        ))}
+        {[0, 1, 2].map((item) =>
+          step === item ? (
+            <Gradient
+              key={item}
+              colors={[theme.accentFrom, theme.accentTo]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              borderRadius={4}
+              style={{ height: 5, width: 27 }}
+            />
+          ) : (
+            <View
+              key={item}
+              style={{ height: 5, width: 8, borderRadius: 4, backgroundColor: theme.border }}
+            />
+          ),
+        )}
       </View>
       <Label
         accessibilityRole="header"
@@ -198,6 +188,7 @@ export function EntryComposer() {
                 accessibilityRole="radio"
                 accessibilityLabel={mood.label}
                 accessibilityState={{ checked: active }}
+                disabled={saving}
                 onPress={() => {
                   setEmotion(key);
                   feedback();
@@ -209,12 +200,9 @@ export function EntryComposer() {
                   borderRadius: 18,
                   gap: 15,
                   borderWidth: 1.5,
-                  borderColor: active ? mood.color : theme.border,
-                  backgroundColor: active
-                    ? theme.background === '#171821'
-                      ? mood.dark
-                      : mood.soft
-                    : theme.surface,
+                  borderColor: active ? mood.color : theme.cardBorder,
+                  backgroundColor: active ? (theme.dark ? mood.dark : mood.soft) : theme.surface,
+                  boxShadow: active ? `0 6px 24px ${mood.glow}` : undefined,
                   opacity: pressed ? 0.7 : 1,
                 })}
               >
@@ -244,6 +232,7 @@ export function EntryComposer() {
                   accessibilityRole="checkbox"
                   accessibilityLabel={activity.label}
                   accessibilityState={{ checked: active }}
+                  disabled={saving}
                   onPress={() => {
                     setActivities((prev) =>
                       active ? prev.filter((item) => item !== activity.id) : [...prev, activity.id],
@@ -280,12 +269,13 @@ export function EntryComposer() {
             })}
           </View>
           <Button
+            disabled={saving}
             onPress={() => setShowAll(!showAll)}
             kind="ghost"
             icon={showAll ? 'chevron-up' : 'chevron-down'}
             style={{ marginTop: 13 }}
           >
-            {showAll ? '收起活动' : '更多活动'}
+            {showAll ? '收起选项' : '更多选项'}
           </Button>
           <Label muted style={{ textAlign: 'center', fontSize: 11, marginTop: 4 }}>
             已选 {activities.length} 项 · 不必为每一种情绪找到原因
@@ -314,9 +304,11 @@ export function EntryComposer() {
           <View>
             <TextInput
               accessibilityLabel="心情笔记"
-              placeholder="今天发生了什么？或只写下一句此刻的想法…"
+              placeholder="愿意告诉我，刚刚发生了什么吗？"
               placeholderTextColor={theme.muted}
               multiline
+              editable={!saving}
+              keyboardAppearance={theme.dark ? 'dark' : 'light'}
               textAlignVertical="top"
               maxLength={Math.max(1000, entry?.note?.length ?? 0)}
               value={note}
@@ -331,26 +323,20 @@ export function EntryComposer() {
             <Label muted style={{ fontSize: 12 }}>
               这个瞬间发生在
             </Label>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TextInput
-                accessibilityLabel="记录日期，格式年-月-日"
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={theme.muted}
-                value={date}
-                onChangeText={setDate}
-                maxLength={10}
-                style={[inputStyle, { flex: 1.6 }]}
-              />
-              <TextInput
-                accessibilityLabel="记录时间，24 小时制"
-                placeholder="HH:mm"
-                placeholderTextColor={theme.muted}
-                value={time}
-                onChangeText={setTime}
-                maxLength={5}
-                style={[inputStyle, { flex: 1 }]}
-              />
-            </View>
+            <EntryDateTimeFields
+              date={date}
+              time={time}
+              disabled={saving}
+              onChange={(next) => {
+                setDate(next.date);
+                setTime(next.time);
+                setError('');
+              }}
+              onExpand={() => scroll.current?.scrollToEnd({ animated: false })}
+            />
+            <Label muted style={{ fontSize: 11 }}>
+              可选择当前或之前的时间
+            </Label>
           </View>
           <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
             <Icon name="lock-outline" size={13} color={theme.muted} />

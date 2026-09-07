@@ -9,10 +9,11 @@ const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const fixture = join(project, 'tests/ui');
 const output = await mkdtemp(join(tmpdir(), 'moodtracker-timeline-ui-'));
 const contextMock = join(fixture, 'fixture-context.tsx');
+const interactions = process.argv.includes('--interactions');
 
 const result = await build({
   absWorkingDir: project,
-  entryPoints: [join(fixture, 'timeline-fixture.tsx')],
+  entryPoints: [join(fixture, interactions ? 'interaction-fixture.tsx' : 'timeline-fixture.tsx')],
   outfile: join(output, 'app.js'),
   bundle: true,
   metafile: true,

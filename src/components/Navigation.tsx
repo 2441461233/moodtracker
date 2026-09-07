@@ -1,10 +1,12 @@
 import React from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Image, Keyboard, Pressable, View } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
 import { useMood } from '../context/MoodContext';
 import { Button, Icon, Label } from './ui';
+import { Gradient } from './effects';
+import { useKeyboardVisible } from '../lib/useKeyboardVisible';
 
 const items: Record<string, { label: string; icon: string; short: string }> = {
   today: { label: '今日心情', short: '今天', icon: 'emoticon-happy-outline' },
@@ -17,6 +19,8 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
   const { desktop, height, width } = useLayout();
   const { settings, openComposer, feedback } = useMood();
   const insets = useSafeAreaInsets();
+  const keyboardVisible = useKeyboardVisible();
+  if (!desktop && keyboardVisible) return null;
   return (
     <View
       style={
@@ -25,9 +29,9 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
               width: 224,
               padding: 22,
               paddingTop: 32,
-              backgroundColor: theme.surface,
+              backgroundColor: theme.dark ? theme.glass : theme.surface,
               borderRightWidth: 1,
-              borderRightColor: theme.border,
+              borderRightColor: theme.cardBorder,
               gap: 24,
             }
           : {
@@ -35,16 +39,14 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
               bottom: Math.max(insets.bottom, 16),
               left: Math.max(20, (width - 470) / 2),
               right: Math.max(20, (width - 470) / 2),
-              borderRadius: 25,
+              borderRadius: 27,
               padding: 7,
-              backgroundColor: theme.surface,
+              backgroundColor: theme.glass,
               borderWidth: 1,
-              borderColor: theme.border,
-              shadowColor: theme.shadow,
-              shadowOffset: { width: 0, height: 5 },
-              shadowOpacity: 0.12,
-              shadowRadius: 25,
-              elevation: 8,
+              borderColor: theme.cardBorder,
+              boxShadow: theme.dark
+                ? '0 14px 44px rgba(0, 0, 0, 0.5)'
+                : '0 14px 40px rgba(60, 54, 105, 0.16)',
             }
       }
     >
@@ -57,25 +59,25 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
             position: 'absolute',
             bottom: 88,
             right: 0,
-            width: 55,
-            height: 55,
-            borderRadius: 20,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: theme.accent,
-            opacity: pressed ? 0.7 : 1,
-            shadowColor: theme.shadow,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.22,
-            shadowRadius: 14,
-            elevation: 5,
+            width: 57,
+            height: 57,
+            borderRadius: 21,
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.94 : 1 }],
+            boxShadow: theme.dark
+              ? '0 8px 28px rgba(139, 124, 246, 0.5)'
+              : '0 10px 26px rgba(108, 99, 223, 0.4)',
           })}
         >
-          <Icon
-            name="plus"
-            color={theme.background === '#171821' ? '#252039' : '#FFFFFF'}
-            size={28}
-          />
+          <Gradient
+            colors={[theme.accentFrom, theme.accentTo]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            borderRadius={21}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Icon name="plus" color={theme.dark ? '#17123A' : '#FFFFFF'} size={28} />
+          </Gradient>
         </Pressable>
       )}
       {desktop && (
@@ -112,6 +114,7 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
                   canPreventDefault: true,
                 });
                 if (!active && !event.defaultPrevented) {
+                  Keyboard.dismiss();
                   feedback();
                   navigation.navigate(route.name);
                 }
@@ -125,8 +128,10 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
                 paddingHorizontal: desktop ? 15 : 0,
                 justifyContent: desktop ? 'flex-start' : 'center',
                 alignItems: 'center',
-                borderRadius: desktop ? 14 : 18,
+                borderRadius: desktop ? 14 : 19,
                 backgroundColor: active ? theme.accentSoft : hovered ? theme.subtle : 'transparent',
+                boxShadow:
+                  active && theme.dark ? '0 0 24px rgba(139, 124, 246, 0.18)' : undefined,
                 opacity: pressed ? 0.65 : 1,
               })}
             >
@@ -169,7 +174,7 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
             onPress={() => navigation.navigate('settings')}
             style={{
               borderTopWidth: 1,
-              borderTopColor: theme.border,
+              borderTopColor: theme.cardBorder,
               paddingTop: 20,
               flexDirection: 'row',
               gap: 10,

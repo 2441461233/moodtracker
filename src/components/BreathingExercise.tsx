@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, AppState, Easing, Platform, View } from 'r
 import { useMood } from '../context/MoodContext';
 import { useTheme } from '../theme';
 import { Button, Icon, Label } from './ui';
+import { GlowOrb } from './effects';
 import { Sheet } from './Sheet';
 
 export function BreathingExercise() {
@@ -12,6 +13,7 @@ export function BreathingExercise() {
   const [seconds, setSeconds] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(true);
   const scale = useRef(new Animated.Value(1)).current;
+  const halo = useRef(new Animated.Value(0)).current;
   const done = seconds >= 60;
   const inhaling = seconds % 10 < 4;
   useEffect(() => {
@@ -33,6 +35,7 @@ export function BreathingExercise() {
   useEffect(() => {
     if (!running || done || reducedMotion) {
       scale.stopAnimation();
+      halo.stopAnimation();
       return;
     }
     const remaining = inhaling ? 4 - (seconds % 10) : 10 - (seconds % 10);
@@ -44,6 +47,20 @@ export function BreathingExercise() {
     }).start();
     return () => scale.stopAnimation();
   }, [running, inhaling, done, reducedMotion, scale]);
+  useEffect(() => {
+    if (!running || done || reducedMotion) return;
+    const loop = Animated.loop(
+      Animated.timing(halo, {
+        toValue: 1,
+        duration: 5000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    );
+    halo.setValue(0);
+    loop.start();
+    return () => loop.stop();
+  }, [running, done, reducedMotion, halo]);
   const start = () => {
     if (done) setSeconds(0);
     setRunning(!running || done);
@@ -72,6 +89,28 @@ export function BreathingExercise() {
           找一个舒服的姿势，让肩膀慢慢放松。
         </Label>
         <View style={{ width: 236, height: 236, alignItems: 'center', justifyContent: 'center' }}>
+          <GlowOrb
+            color={theme.dark ? '#6A58E8' : '#B9B2F2'}
+            size={236}
+            opacity={running ? 0.9 : 0.55}
+            style={{ position: 'absolute' }}
+          />
+          {running && !done && !reducedMotion && (
+            <Animated.View
+              style={{
+                position: 'absolute',
+                width: 180,
+                height: 180,
+                borderRadius: 90,
+                borderWidth: 1.5,
+                borderColor: theme.accent,
+                opacity: halo.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }),
+                transform: [
+                  { scale: halo.interpolate({ inputRange: [0, 1], outputRange: [1, 1.62] }) },
+                ],
+              }}
+            />
+          )}
           <Animated.View
             style={{
               position: 'absolute',
@@ -81,6 +120,7 @@ export function BreathingExercise() {
               backgroundColor: theme.accentSoft,
               borderWidth: 1,
               borderColor: theme.accent,
+              boxShadow: theme.dark ? '0 0 44px rgba(139, 124, 246, 0.35)' : undefined,
               transform: [{ scale }],
             }}
           />

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, TextInput, View } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { useMood } from '../context/MoodContext';
 import { Page } from '../components/Page';
@@ -15,7 +15,14 @@ import {
 } from '../components/ui';
 import { TimelineList } from '../components/TimelineList';
 import { HealthTimelineNotice } from '../components/HealthTimelineNotice';
-import { dayKey, formatDate, monthDays, parseLocalDate, WEEKDAYS } from '../lib/dates';
+import {
+  dayKey,
+  formatDate,
+  monthDays,
+  parseLocalDate,
+  selectionInMonth,
+  WEEKDAYS,
+} from '../lib/dates';
 import {
   filterTimeline,
   groupTimelineByDay,
@@ -80,14 +87,18 @@ export default function CalendarScreen() {
         ? 'Apple 心境暂时无法读取'
         : '正在等待 Apple 心境'
       : null;
-  const shift = (direction: number) =>
-    setMonth(
-      new Date(
-        month.getFullYear() + (mode === 'year' ? direction : 0),
-        month.getMonth() + (mode === 'month' ? direction : 0),
-        1,
-      ),
+  const shift = (direction: number) => {
+    const target = new Date(
+      month.getFullYear() + (mode === 'year' ? direction : 0),
+      month.getMonth() + (mode === 'month' ? direction : 0),
+      1,
     );
+    const next = selectionInMonth(target, parseLocalDate(selected)!, now);
+    setMonth(new Date(next.getFullYear(), next.getMonth(), 1));
+    setSelected(dayKey(next));
+    setQuery('');
+    Keyboard.dismiss();
+  };
   const canNext =
     mode === 'month'
       ? dayKey(new Date(month.getFullYear(), month.getMonth() + 1, 1)) <= dayKey(now)
@@ -97,6 +108,7 @@ export default function CalendarScreen() {
       ? month.getFullYear() > 1970 || month.getMonth() > 0
       : month.getFullYear() > 1970;
   const choose = (date: Date) => {
+    Keyboard.dismiss();
     setSelected(dayKey(date));
     setMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     setMode('month');
@@ -147,7 +159,7 @@ export default function CalendarScreen() {
             minWidth: 0,
           }}
         >
-          <Card style={{ padding: compact ? 16 : 25 }}>
+          <Card style={{ padding: compact ? 12 : 25 }}>
             <View
               style={{
                 flexDirection: 'row',
@@ -218,13 +230,14 @@ export default function CalendarScreen() {
                     const emotion = emotionForScore(score);
                     const mood = emotion ? MOOD_APPEARANCE[emotion] : null;
                     return (
-                      <View key={key} style={{ width: '14.2857%', paddingHorizontal: 2 }}>
+                      <View key={key} style={{ width: '14.2857%' }}>
                         <Pressable
                           accessibilityRole="button"
                           accessibilityLabel={`${formatDate(date)}，${sourceLabel}，${dayRecords.length ? `${dayRecords.length} 条记录，近似心情 ${score!.toFixed(1)} 分${appleCount ? `，其中 ${appleCount} 条来自 Apple 健康` : ''}` : applePending || appleUnavailable ? '尚无已载入的记录，Apple 心境仍待读取' : '当前来源未载入记录'}`}
                           accessibilityState={{ selected: active, disabled: future }}
                           disabled={future}
                           onPress={() => {
+                            Keyboard.dismiss();
                             setSelected(key);
                             setQuery('');
                           }}
@@ -237,7 +250,7 @@ export default function CalendarScreen() {
                             backgroundColor: active
                               ? theme.accentSoft
                               : mood
-                                ? theme.background === '#171821'
+                                ? theme.dark
                                   ? mood.dark
                                   : mood.soft
                                 : 'transparent',
@@ -478,7 +491,17 @@ export default function CalendarScreen() {
               placeholderTextColor={theme.muted}
               value={query}
               onChangeText={setQuery}
-              style={{ flex: 1, fontFamily: font, fontSize: 13, minHeight: 48, color: theme.text }}
+              returnKeyType="search"
+              onSubmitEditing={Keyboard.dismiss}
+              keyboardAppearance={theme.dark ? 'dark' : 'light'}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                fontFamily: font,
+                fontSize: 16,
+                minHeight: 48,
+                color: theme.text,
+              }}
             />
             {query.length > 0 && (
               <IconButton name="close" label="清空搜索" onPress={() => setQuery('')} />
@@ -504,7 +527,7 @@ export default function CalendarScreen() {
                   accessibilityState={{ selected: filter === id }}
                   onPress={() => setFilter(id as EmotionId | 'all')}
                   style={{
-                    minHeight: 36,
+                    minHeight: 44,
                     paddingHorizontal: 11,
                     justifyContent: 'center',
                     borderRadius: 11,

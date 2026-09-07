@@ -27,6 +27,17 @@ export function monthDays(value: Date): (Date | null)[] {
   while (cells.length % 7 !== 0) cells.push(null);
   return cells;
 }
+
+/** Keep the selected day within the visible month, clamping short months and today. */
+export function selectionInMonth(month: Date, selected: Date, now: Date): Date {
+  const lastDay = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const next = new Date(
+    month.getFullYear(),
+    month.getMonth(),
+    Math.min(selected.getDate(), lastDay),
+  );
+  return next > startOfDay(now) ? startOfDay(now) : next;
+}
 export function parseLocalDate(input: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input);
   if (!match) return null;
@@ -50,8 +61,8 @@ export function getGreeting(now = new Date()): string {
 export function parseEntryTime(date: string, time: string, now = new Date()): Date {
   const parsed = parseLocalDate(date);
   if (!parsed || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))
-    throw new Error('请输入有效日期与时间，例如 2026-09-02、18:30。');
-  if (parsed.getFullYear() < 1970) throw new Error('请选择 1970 年之后的记录日期。');
+    throw new Error('请选择有效的记录日期与时间。');
+  if (parsed.getFullYear() < 1970) throw new Error('请选择 1970 年及之后的记录日期。');
   const [hours, minutes] = time.split(':').map(Number);
   parsed.setHours(hours, minutes, 0, 0);
   if (dayKey(parsed) !== date || parsed.getHours() !== hours || parsed.getMinutes() !== minutes)

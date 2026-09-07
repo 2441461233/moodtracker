@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { Platform, Switch, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Keyboard, Platform, Switch, TextInput, View } from 'react-native';
 import { useMood } from '../context/MoodContext';
 import { Page } from '../components/Page';
-import { Button, Card, Icon, Label, SectionTitle, Segment } from '../components/ui';
+import { Button, Card, Disclosure, Icon, Label, SectionTitle, Segment } from '../components/ui';
+import { Gradient } from '../components/effects';
 import { Sheet } from '../components/Sheet';
 import { AppleHealthPanel } from '../components/AppleHealthPanel';
 import { font, useLayout, useTheme } from '../theme';
@@ -18,6 +19,12 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { desktop } = useLayout();
   const [name, setName] = useState(settings.name);
+  const previousName = useRef(settings.name);
+  useEffect(() => {
+    const previous = previousName.current;
+    previousName.current = settings.name;
+    setName((draft) => (draft === previous ? settings.name : draft));
+  }, [settings.name]);
   const [saving, setSaving] = useState(false);
   const [fileBusy, setFileBusy] = useState(false);
   const [incoming, setIncoming] = useState<MoodEntry[] | null>(null);
@@ -32,7 +39,11 @@ export default function SettingsScreen() {
     setError('');
     try {
       await updateSettings(next);
-      if (message) notify(message);
+      if (message) {
+        setName(next.name);
+        Keyboard.dismiss();
+        notify(message);
+      }
     } catch {
       setError('偏好设置没有保存成功，请再试一次。');
     } finally {
@@ -109,21 +120,32 @@ export default function SettingsScreen() {
       <View
         style={{ flexDirection: desktop ? 'row' : 'column', gap: 24, alignItems: 'flex-start' }}
       >
-        <View style={{ flex: 1.25, width: desktop ? undefined : '100%', gap: 24 }}>
+        <View
+          style={{ flex: desktop ? 1.25 : undefined, width: desktop ? undefined : '100%', gap: 24 }}
+        >
           <Card>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 25 }}>
-              <View
+              <Gradient
+                colors={[theme.accentFrom, theme.accentTo]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                borderRadius={21}
                 style={{
                   width: 59,
                   height: 59,
-                  backgroundColor: theme.accentSoft,
-                  borderRadius: 21,
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: theme.dark
+                    ? '0 6px 22px rgba(139, 124, 246, 0.35)'
+                    : '0 8px 20px rgba(108, 99, 223, 0.28)',
                 }}
               >
-                <Icon name="account-heart-outline" size={31} color={theme.accentText} />
-              </View>
+                <Icon
+                  name="account-heart-outline"
+                  size={31}
+                  color={theme.dark ? '#17123A' : '#FFFFFF'}
+                />
+              </Gradient>
               <View style={{ flex: 1, gap: 6 }}>
                 <Label style={{ fontSize: 18, fontWeight: '600' }}>
                   {settings.name || '欢迎，真实的你'}
@@ -143,6 +165,9 @@ export default function SettingsScreen() {
                 placeholderTextColor={theme.muted}
                 maxLength={24}
                 value={name}
+                editable={!saving}
+                returnKeyType="done"
+                keyboardAppearance={theme.dark ? 'dark' : 'light'}
                 onChangeText={setName}
                 onSubmitEditing={() => {
                   void preferences({ ...settings, name: name.trim() }, '称呼已更新。');
@@ -153,7 +178,7 @@ export default function SettingsScreen() {
                   backgroundColor: theme.subtle,
                   color: theme.text,
                   fontFamily: font,
-                  fontSize: 13,
+                  fontSize: 16,
                   minHeight: 47,
                   borderRadius: 13,
                   paddingHorizontal: 14,
@@ -174,26 +199,25 @@ export default function SettingsScreen() {
             </Label>
           </Card>
           <Card>
-            <SectionTitle title="让这里，更像你" />
+            <SectionTitle title="外观与反馈" />
             <View style={{ gap: 22 }}>
               <View style={{ gap: 12 }}>
                 <View style={{ flexDirection: 'row', gap: 9, alignItems: 'center' }}>
                   <Icon name="palette-outline" size={20} />
                   <Label style={{ fontSize: 13 }}>外观主题</Label>
                 </View>
-                <View pointerEvents={saving ? 'none' : 'auto'}>
-                  <Segment
-                    value={settings.theme}
-                    onChange={(value) => {
-                      void preferences({ ...settings, theme: value });
-                    }}
-                    options={[
-                      { id: 'light', label: '浅色' },
-                      { id: 'dark', label: '深色' },
-                      { id: 'system', label: '跟随系统' },
-                    ]}
-                  />
-                </View>
+                <Segment
+                  disabled={saving}
+                  value={settings.theme}
+                  onChange={(value) => {
+                    void preferences({ ...settings, theme: value });
+                  }}
+                  options={[
+                    { id: 'light', label: '浅色' },
+                    { id: 'dark', label: '深色' },
+                    { id: 'system', label: '跟随系统' },
+                  ]}
+                />
               </View>
               <View style={{ height: 1, backgroundColor: theme.border }} />
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -219,12 +243,13 @@ export default function SettingsScreen() {
               </View>
             </View>
           </Card>
+        </View>
+        <View
+          style={{ flex: desktop ? 1 : undefined, width: desktop ? undefined : '100%', gap: 24 }}
+        >
           <AppleHealthPanel />
           <Card>
-            <SectionTitle
-              title="你的记录，始终由你掌握"
-              subtitle="导出完整备份，或把记录带到另一台设备"
-            />
+            <SectionTitle title="备份与导入" subtitle="导出完整备份，或把记录带到另一台设备" />
             <View style={{ gap: 13 }}>
               <Button
                 kind="secondary"
@@ -270,54 +295,37 @@ export default function SettingsScreen() {
             </Card>
           )}
         </View>
-        <View style={{ flex: 1, width: desktop ? undefined : '100%', gap: 24 }}>
-          <Card style={{ backgroundColor: theme.accentSoft, borderColor: 'transparent', gap: 18 }}>
-            <Icon name="shield-lock-outline" size={32} color={theme.accentText} />
-            <Label style={{ fontSize: 21, fontWeight: '600', lineHeight: 31 }}>
-              有些心事，{'\n'}只需要自己知道。
-            </Label>
-            <Label muted style={{ fontSize: 13, lineHeight: 24 }}>
-              无需注册，不上传到我们的服务器。{'\n'}笔记、活动与洞察在本地处理；可选的 Apple
-              健康读写，只在你授权并操作时发生。
-            </Label>
-            <View style={{ height: 1, backgroundColor: theme.accent + '30' }} />
-            <View style={{ gap: 12 }}>
-              {['不接入 AI 情绪分析', '不设置广告与追踪统计', '不自动上传文字日记'].map((item) => (
-                <View key={item} style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-                  <Icon name="check-circle-outline" color={theme.accentText} size={17} />
-                  <Label style={{ fontSize: 12 }}>{item}</Label>
-                </View>
-              ))}
-            </View>
-          </Card>
-          <Card style={{ gap: 13 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-              <Icon name="information-outline" size={20} color={theme.orange} />
-              <Label style={{ fontSize: 14, fontWeight: '600' }}>关于本地保存</Label>
-            </View>
-            <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
-              网页记录保存在当前浏览器，原生应用记录保存在应用内。更换设备、浏览器或网址后，不会自动出现原来的记录；请先导出备份，再在新设备导入。
-            </Label>
-            <Label muted style={{ fontSize: 12, lineHeight: 23 }}>
-              清除浏览器数据、卸载应用或使用无痕模式可能丢失记录。数据未单独加密，请保护设备访问权限，并妥善保存导出的文件。
-            </Label>
-          </Card>
-          <View style={{ paddingHorizontal: 6, gap: 10 }}>
-            <Label style={{ fontSize: 16, fontWeight: '700', letterSpacing: -0.5 }}>
-              moodtracker.
-            </Label>
-            <Label muted style={{ fontSize: 11 }}>
-              心情日记 · 2.1.2
-            </Label>
-            <Label muted style={{ fontSize: 11, lineHeight: 22 }}>
-              一个帮助自我记录与觉察的小空间。{'\n'}不提供诊断或治疗，不能替代专业支持。
-            </Label>
-          </View>
-        </View>
+      </View>
+      <View style={{ borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 16, gap: 4 }}>
+        <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
+          记录保存在本设备。换设备或卸载前，请先导出备份。
+        </Label>
+        <Disclosure title="隐私与本地保存">
+          <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
+            无需注册，笔记、活动与洞察在本地处理，不上传到我们的服务器。Apple
+            健康同步需你主动连接并授权，文字笔记不参与同步。
+          </Label>
+          <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
+            不接入 AI 情绪分析，不设置广告与追踪统计，不自动上传文字日记。
+          </Label>
+          <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
+            网页记录保存在当前浏览器，原生应用记录保存在应用内。更换设备、浏览器或网址后，需要导入备份才能恢复记录。
+          </Label>
+          <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
+            清除浏览器数据、卸载应用或使用无痕模式可能丢失记录。数据未单独加密，请保护设备访问权限，并妥善保存备份。
+          </Label>
+        </Disclosure>
+        <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
+          MoodTracker · 2.1.3
+        </Label>
+        <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
+          用于自我记录与觉察，不提供诊断或治疗，不能替代专业支持。
+        </Label>
       </View>
       {incoming && (
         <Sheet
           title="确认导入备份"
+          dismissDisabled={fileBusy}
           onClose={() => {
             if (!fileBusy) setIncoming(null);
           }}

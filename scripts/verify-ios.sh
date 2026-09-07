@@ -94,6 +94,11 @@ const hasHealthTarget = Object.values(pods.pbxNativeTargetSection()).some(
     String(target.name).replace(/^"(.*)"$/, '$1') === 'MoodHealth'
 );
 if (!hasHealthTarget) throw new Error('MoodHealth is missing from CocoaPods targets');
+const hasDateTimePicker = Object.values(pods.pbxNativeTargetSection()).some(
+  target => typeof target === 'object' &&
+    String(target.name).replace(/^"(.*)"$/, '$1') === 'RNDateTimePicker'
+);
+if (!hasDateTimePicker) throw new Error('RNDateTimePicker is missing from CocoaPods targets');
 function providers(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const location = path.join(directory, entry.name);
@@ -105,7 +110,7 @@ const registered = providers('ios/Pods/Target Support Files').some(file =>
   fs.readFileSync(file, 'utf8').includes('MoodHealthModule.self')
 );
 if (!registered) throw new Error('MoodHealthModule is missing from Expo module registration');
-console.log('Verified MoodHealth pod target and Expo registration.');
+console.log('Verified MoodHealth, RNDateTimePicker pod targets and Expo registration.');
 NODE
 
 printf 'Building workspace %s, scheme %s\n' "$ios_verify_workspace" "$ios_verify_scheme"

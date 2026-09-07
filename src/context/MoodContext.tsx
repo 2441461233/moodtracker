@@ -128,6 +128,7 @@ export function MoodProvider({ children }: PropsWithChildren) {
     reload,
     feedback,
     openComposer: (request = {}) => {
+      setNow(new Date());
       setComposer(request);
       feedback();
     },

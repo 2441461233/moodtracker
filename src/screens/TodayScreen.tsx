@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useMood } from '../context/MoodContext';
@@ -10,6 +10,7 @@ import {
   timelineInRange,
 } from '../health/timeline';
 import { Card, EmptyState, Icon, Label, MoodIcon, SectionTitle, Button } from '../components/ui';
+import { Gradient, GlowOrb } from '../components/effects';
 import { Page } from '../components/Page';
 import { TimelineList } from '../components/TimelineList';
 import { HealthTimelineNotice } from '../components/HealthTimelineNotice';
@@ -27,112 +28,123 @@ export default function TodayScreen() {
   const [selected, setSelected] = useState<string | null>(null);
   const selectedKey = selected ?? dayKey(now);
   const weekStart = startOfWeek(now);
+  const weekKey = dayKey(weekStart);
+  useEffect(() => setSelected(null), [weekKey]);
   const weekRecords = timelineInRange(records, weekStart, addDays(weekStart, 7));
   const weekGroups = groupTimelineByDay(weekRecords);
   const selectedRecords = records.filter((record) => dayKey(record.timestamp) === selectedKey);
   const selectedAppleCount = selectedRecords.filter((record) => record.type === 'apple').length;
   const weekAppleCount = weekRecords.filter((record) => record.type === 'apple').length;
   const average = timelineDailyAverage(weekRecords);
+  const averageEmotion = average === null ? null : emotionForScore(average);
   const streak = currentStreak(entries, now);
   const ids = Object.keys(MOOD_APPEARANCE) as EmotionId[];
   return (
     <Page
-      eyebrow={formatDate(now, true)}
-      title={`${getGreeting()}${settings.name ? `，${settings.name}` : '，给心情一点空间'}`}
+      eyebrow={formatDate(now, true).toUpperCase()}
+      title={`${getGreeting(now)}${settings.name ? `，${settings.name}` : '，给心情一点空间'}`}
       subtitle="不必每一天都很好，但每一天都值得被看见。"
     >
       <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 24, alignItems: 'stretch' }}>
         <View style={{ flex: desktop ? 1.7 : undefined, gap: 24, minWidth: 0 }}>
-          <Card style={{ padding: compact ? 22 : 28 }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 22,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <Icon name="white-balance-sunny" size={17} color={theme.accentText} />
-                <Label
-                  style={{
-                    color: theme.accentText,
-                    fontSize: 11,
-                    letterSpacing: 1.8,
-                    fontWeight: '600',
-                  }}
-                >
-                  A MOMENT FOR YOU
+          <View>
+            <GlowOrb
+              color={theme.dark ? '#6A58E8' : '#B9B2F2'}
+              size={compact ? 300 : 420}
+              opacity={theme.dark ? 0.55 : 0.5}
+              style={{ position: 'absolute', top: -110, right: compact ? -90 : -60 }}
+            />
+            <Card style={{ padding: compact ? 22 : 28 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 22,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                  <Icon name="white-balance-sunny" size={17} color={theme.accentText} />
+                  <Label
+                    style={{
+                      color: theme.accentText,
+                      fontSize: 11,
+                      letterSpacing: 1.8,
+                      fontWeight: '600',
+                    }}
+                  >
+                    A MOMENT FOR YOU
+                  </Label>
+                </View>
+                <Label muted style={{ fontSize: 11 }}>
+                  约 10 秒
                 </Label>
               </View>
-              <Label muted style={{ fontSize: 11 }}>
-                约 10 秒
+              <Label
+                accessibilityRole="header"
+                style={{
+                  fontSize: width < 360 ? 20 : compact ? 23 : 26,
+                  lineHeight: 37,
+                  fontWeight: '600',
+                  letterSpacing: -0.5,
+                }}
+              >
+                此刻，你的心情怎么样？
               </Label>
-            </View>
-            <Label
-              accessibilityRole="header"
-              style={{
-                fontSize: width < 360 ? 20 : compact ? 23 : 26,
-                lineHeight: 37,
-                fontWeight: '600',
-                letterSpacing: -0.5,
-              }}
-            >
-              此刻，你的心情怎么样？
-            </Label>
-            <Label muted style={{ marginTop: 8, fontSize: 13 }}>
-              没有标准答案，选一个最接近的感受。
-            </Label>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                marginTop: 29,
-                marginBottom: 25,
-                gap: compact ? 3 : 8,
-              }}
-            >
-              {ids.map((id) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`记录心情：${MOOD_APPEARANCE[id].label}`}
-                  onPress={() => openComposer({ emotionId: id })}
-                  style={({ pressed, hovered }) => ({
-                    flex: 1,
-                    alignItems: 'center',
-                    gap: 12,
-                    paddingVertical: 9,
-                    borderRadius: 16,
-                    backgroundColor: hovered ? theme.subtle : 'transparent',
-                    transform: [{ scale: pressed ? 0.92 : 1 }],
-                  })}
-                >
-                  <MoodIcon id={id} size={compact ? (width < 360 ? 43 : 49) : 60} />
-                  <Label style={{ fontSize: compact ? 11 : 13, color: theme.secondary }}>
-                    {MOOD_APPEARANCE[id].label}
-                  </Label>
-                </Pressable>
-              ))}
-            </View>
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: theme.border,
-                paddingTop: 17,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 7,
-              }}
-            >
-              <Icon name="lock-outline" size={13} color={theme.muted} />
-              <Label muted style={{ fontSize: 11, flex: 1 }}>
-                {health.enabled
-                  ? '已连接 Apple 健康，文字笔记仍留在本地。'
-                  : '只属于你的心情，留在这台设备。'}
+              <Label muted style={{ marginTop: 8, fontSize: 13 }}>
+                没有标准答案，选一个最接近的感受。
               </Label>
-            </View>
-          </Card>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginTop: 29,
+                  marginBottom: 25,
+                  gap: compact ? 3 : 8,
+                }}
+              >
+                {ids.map((id) => (
+                  <Pressable
+                    key={id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`记录心情：${MOOD_APPEARANCE[id].label}`}
+                    onPress={() => openComposer({ emotionId: id })}
+                    style={({ pressed, hovered }) => ({
+                      flex: 1,
+                      alignItems: 'center',
+                      gap: 12,
+                      paddingVertical: 9,
+                      borderRadius: 16,
+                      backgroundColor: hovered ? theme.subtle : 'transparent',
+                      transform: [{ scale: pressed ? 0.92 : hovered ? 1.05 : 1 }],
+                    })}
+                  >
+                    <MoodIcon id={id} size={compact ? (width < 360 ? 43 : 49) : 60} />
+                    <Label style={{ fontSize: compact ? 11 : 13, color: theme.secondary }}>
+                      {MOOD_APPEARANCE[id].label}
+                    </Label>
+                  </Pressable>
+                ))}
+              </View>
+              <View
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: theme.cardBorder,
+                  paddingTop: 17,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 7,
+                }}
+              >
+                <Icon name="lock-outline" size={13} color={theme.muted} />
+                <Label muted style={{ fontSize: 11, flex: 1 }}>
+                  {health.enabled
+                    ? '已连接 Apple 健康，文字笔记仍留在本地。'
+                    : '只属于你的心情，留在这台设备。'}
+                </Label>
+              </View>
+            </Card>
+          </View>
           <Card style={{ padding: compact ? 18 : 24 }}>
             <SectionTitle
               title="这一周，和自己在一起"
@@ -158,7 +170,7 @@ export default function TodayScreen() {
                     accessibilityLabel={`${formatDate(date)}，${dayRecords.length} 条记录${appleCount ? `，含 ${appleCount} 条 Apple 心境` : ''}`}
                     accessibilityState={{ selected: active, disabled: future }}
                     disabled={future}
-                    onPress={() => setSelected(key)}
+                    onPress={() => setSelected(key === dayKey(now) ? null : key)}
                     style={({ pressed }) => ({
                       flex: 1,
                       alignItems: 'center',
@@ -167,17 +179,29 @@ export default function TodayScreen() {
                       gap: 10,
                       minHeight: 89,
                       opacity: future ? 0.35 : pressed ? 0.7 : 1,
-                      backgroundColor: active ? theme.accent : 'transparent',
+                      overflow: 'hidden',
                     })}
                   >
+                    {active && (
+                      <Gradient
+                        colors={[theme.accentFrom, theme.accentTo]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        borderRadius={17}
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                      />
+                    )}
                     <Label
-                      style={{ color: active ? theme.surface : theme.secondary, fontSize: 11 }}
+                      style={{
+                        color: active ? (theme.dark ? '#DCD6FF' : 'rgba(255,255,255,0.85)') : theme.secondary,
+                        fontSize: 11,
+                      }}
                     >
                       周{WEEKDAYS[index]}
                     </Label>
                     <Label
                       style={{
-                        color: active ? theme.surface : theme.text,
+                        color: active ? (theme.dark ? '#FFFFFF' : '#FFFFFF') : theme.text,
                         fontSize: 18,
                         fontWeight: '600',
                       }}
@@ -190,10 +214,14 @@ export default function TodayScreen() {
                         height: 5,
                         borderRadius: 3,
                         backgroundColor: active
-                          ? theme.surface
+                          ? '#FFFFFF'
                           : dayMood
                             ? MOOD_APPEARANCE[dayMood].color
                             : theme.border,
+                        boxShadow:
+                          !active && dayMood
+                            ? `0 0 8px ${MOOD_APPEARANCE[dayMood].glow}`
+                            : undefined,
                       }}
                     />
                   </Pressable>
@@ -262,7 +290,7 @@ export default function TodayScreen() {
             <View style={{ flexDirection: 'row', gap: 20, marginBottom: 24 }}>
               <View style={{ flex: 1, gap: 6 }}>
                 <Label
-                  style={{ fontSize: 34, lineHeight: 42, fontWeight: '600', letterSpacing: -1 }}
+                  style={{ fontSize: 34, lineHeight: 42, fontWeight: '700', letterSpacing: -1.2 }}
                 >
                   {weekGroups.size}
                   <Label muted style={{ fontSize: 12 }}>
@@ -274,10 +302,16 @@ export default function TodayScreen() {
                   与自己相处
                 </Label>
               </View>
-              <View style={{ width: 1, backgroundColor: theme.border }} />
+              <View style={{ width: 1, backgroundColor: theme.cardBorder }} />
               <View style={{ flex: 1, gap: 6 }}>
                 <Label
-                  style={{ fontSize: 34, lineHeight: 42, fontWeight: '600', letterSpacing: -1 }}
+                  style={{
+                    fontSize: 34,
+                    lineHeight: 42,
+                    fontWeight: '700',
+                    letterSpacing: -1.2,
+                    color: averageEmotion ? MOOD_APPEARANCE[averageEmotion].color : theme.text,
+                  }}
                 >
                   {average === null ? '—' : average.toFixed(1)}
                   <Label muted style={{ fontSize: 12 }}>
@@ -286,24 +320,30 @@ export default function TodayScreen() {
                   </Label>
                 </Label>
                 <Label muted style={{ fontSize: 12 }}>
-                  平均心情
+                  平均心情{averageEmotion ? ` · ${MOOD_APPEARANCE[averageEmotion].label}` : ''}
                 </Label>
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 6, marginBottom: 17 }}>
-              {Array.from({ length: 7 }, (_, index) => (
-                <View
-                  key={index}
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: weekGroups.has(dayKey(addDays(weekStart, index)))
-                      ? theme.accent
-                      : theme.subtle,
-                  }}
-                />
-              ))}
+              {Array.from({ length: 7 }, (_, index) => {
+                const dayRecords = weekGroups.get(dayKey(addDays(weekStart, index))) ?? [];
+                const last = [...dayRecords].sort((a, b) => b.timestamp - a.timestamp)[0];
+                const dayMood = health.enabled
+                  ? emotionForScore(timelineDayScore(dayRecords))
+                  : (last?.emotionId ?? null);
+                return (
+                  <View
+                    key={index}
+                    style={{
+                      flex: 1,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: dayMood ? MOOD_APPEARANCE[dayMood].color : theme.subtle,
+                      boxShadow: dayMood ? `0 0 10px ${MOOD_APPEARANCE[dayMood].glow}` : undefined,
+                    }}
+                  />
+                );
+              })}
             </View>
             <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
               {weekRecords.length
@@ -325,57 +365,55 @@ export default function TodayScreen() {
               探索我的情绪
             </Button>
           </Card>
-          <Card
-            style={{ backgroundColor: theme.accentSoft, borderColor: 'transparent', padding: 25 }}
-          >
-            <View style={{ alignItems: 'flex-start', gap: 16 }}>
-              <Icon name="weather-windy" size={28} color={theme.accentText} />
-              <View style={{ gap: 9 }}>
-                <Label style={{ fontSize: 20, fontWeight: '600', lineHeight: 29 }}>
-                  让心情，轻一点。
-                </Label>
-                <Label style={{ color: theme.secondary, fontSize: 13, lineHeight: 23 }}>
-                  给自己一分钟。{desktop ? '\n' : ''}放下手边的事，跟着呼吸慢下来。
+          <View>
+            <GlowOrb
+              color={theme.dark ? '#2C6E5D' : '#BFE3D6'}
+              size={260}
+              opacity={theme.dark ? 0.5 : 0.45}
+              style={{ position: 'absolute', bottom: -70, left: -70 }}
+            />
+            <Card style={{ gap: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Icon name="weather-windy" size={19} />
+                <Label accessibilityRole="header" style={{ fontSize: 17, fontWeight: '600' }}>
+                  呼吸练习
                 </Label>
               </View>
+              <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
+                给自己一分钟，跟着节奏慢慢呼吸。
+              </Label>
               <Button
                 kind="secondary"
                 onPress={() => setBreathing(true)}
                 icon="play-outline"
-                style={{ backgroundColor: theme.surface }}
+                style={{ alignSelf: 'flex-start' }}
               >
                 开始呼吸 · 1 分钟
               </Button>
-            </View>
-          </Card>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              gap: 12,
-              paddingHorizontal: 6,
-            }}
-          >
-            <Icon name="sprout-outline" color={theme.green} size={26} />
-            <View style={{ flex: 1, gap: 5 }}>
-              <Label style={{ fontSize: 13, fontWeight: '600' }}>
-                {streak > 0
-                  ? health.enabled
-                    ? `已连续记录本地心情 ${streak} 天`
-                    : `已连续关照自己 ${streak} 天`
-                  : '慢慢来，也在向前'}
-              </Label>
-              <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
-                偶尔忘记也没关系。{desktop ? '\n' : ''}这里一直为你留着一个位置。
-              </Label>
-            </View>
+            </Card>
           </View>
+          {streak > 0 && (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                alignSelf: 'flex-start',
+                backgroundColor: theme.dark ? 'rgba(224, 170, 62, 0.1)' : '#FBF3DE',
+                borderWidth: 1,
+                borderColor: theme.dark ? 'rgba(224, 170, 62, 0.24)' : '#F0E2C0',
+                paddingHorizontal: 13,
+                paddingVertical: 8,
+                borderRadius: 999,
+              }}
+            >
+              <Icon name="fire" size={15} color={theme.dark ? '#E0AA3E' : '#B98439'} />
+              <Label style={{ fontSize: 12, color: theme.dark ? '#E0AA3E' : '#8A6520' }}>
+                {health.enabled ? '已连续记录本地心情' : '已连续记录'} {streak} 天
+              </Label>
+            </View>
+          )}
         </View>
-      </View>
-      <View style={{ alignItems: 'center', paddingTop: 8 }}>
-        <Label muted style={{ fontSize: 10, letterSpacing: 1.3 }}>
-          A LITTLE MORE AWARE, A LITTLE MORE YOU.
-        </Label>
       </View>
     </Page>
   );

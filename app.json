@@ -2,7 +2,7 @@
   "expo": {
     "name": "心情日记",
     "slug": "moodtracker",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "description": "一个只属于你的心情空间。记录感受、回看日历、发现生活与情绪的小关联。",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-font",
+      "@react-native-community/datetimepicker",
       [
         "expo-build-properties",
         {

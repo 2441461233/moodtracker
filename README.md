@@ -4,6 +4,8 @@
 
 [打开在线版](https://2441461233.github.io/moodtracker/) · [设计与交互验收](design-qa.md) · [依赖安全说明](docs/security.md) · [iOS 发布与验收](docs/ios-release.md)
 
+**2026-09-07 本地交互修复（未发布）**：日期 / 时间改用系统选择器，点叉直接关闭记录，修复日历翻月日期同步、保存锁定，并调整 iOS 键盘与弹窗衔接。198 项回归通过，iOS JavaScript 资源导出与选择器自动链接通过；尚未进行 Xcode 编译或真机验收。新增原生组件需要重新构建安装包。详见[本轮检查与截图](docs/ui-interaction-audit-2026-09-07.md)。
+
 **当前修订状态（2026-09-03 08:31 UTC）**：2.1.2 将 Apple 心境统一接入每日记录、月历 / 年像素与独立健康回顾。[2.1.2（6）原生构建](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/06a06295-3709-4e30-8a5e-275386a6d07d) 已完成，下载的 IPA 已通过严格验签，包含 HealthKit 与 Background Delivery；**尚未上传或分发到 TestFlight**。提交前本地 `npm run verify` 已退出 0：TypeScript、172 项回归、Web 导出与 19 项网页测试通过，共 191 项。首次网页 CI 因既有短定时器测试竞态失败；测试已改为确定性推进，172 项回归及类型检查再次通过，[网页复跑与部署](https://github.com/2441461233/moodtracker/actions/runs/33733731447) 已于 08:31:42 UTC 成功。320px / 390px 隔离合成夹具已实际点验，详见 [验收记录](design-qa.md)；夹具不是真实 HealthKit，尚未完成真机验收。下面的 2.1.1（5）发布记录只是历史证据，不能当作 2.1.2 已可更新的证明。
 
 ## 这一版有什么

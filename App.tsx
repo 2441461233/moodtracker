@@ -4,6 +4,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
 import TodayScreen from './src/screens/TodayScreen';
 import InsightsScreen from './src/screens/InsightsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
@@ -11,12 +12,16 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import { MoodProvider, useMood } from './src/context/MoodContext';
 import { useTheme, useLayout } from './src/theme';
 import { Navigation } from './src/components/Navigation';
+import { AmbientBackground } from './src/components/effects';
 import { EntryComposer } from './src/components/EntryComposer';
 import { EntryDetail } from './src/components/EntryDetail';
 import { BreathingExercise } from './src/components/BreathingExercise';
 import { Button, Card, EmptyState, Icon, Label } from './src/components/ui';
 import { moodStorage } from './src/storage';
 import { exportText } from './src/lib/transfer';
+
+// Web defaults to plain Views; enable screen detachment so transparent tabs cannot overlap.
+enableScreens();
 
 const Tab = createBottomTabNavigator();
 
@@ -34,7 +39,7 @@ function AppContent() {
   const theme = useTheme();
   const { desktop } = useLayout();
   const { composer, detail, breathing, ready, toast, storageError } = useMood();
-  const dark = theme.background === '#171821';
+  const dark = theme.dark;
   if (!ready)
     return (
       <View
@@ -53,6 +58,7 @@ function AppContent() {
   if (storageError) return <RecoveryScreen message={storageError} />;
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <AmbientBackground />
       <NavigationContainer
         theme={{
           ...(dark ? DarkTheme : DefaultTheme),
@@ -68,12 +74,13 @@ function AppContent() {
       >
         <StatusBar style={dark ? 'light' : 'dark'} />
         <Tab.Navigator
+          detachInactiveScreens
           tabBar={(props) => <Navigation {...props} />}
           screenOptions={{
             headerShown: false,
             tabBarPosition: desktop ? 'left' : 'bottom',
             animation: 'none',
-            sceneStyle: { backgroundColor: theme.background },
+            sceneStyle: { backgroundColor: 'transparent' },
           }}
         >
           <Tab.Screen

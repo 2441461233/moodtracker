@@ -90,3 +90,12 @@ test('native EAS config cannot inherit the GitHub Pages asset prefix', () => {
 test('normal CI test command includes the optional native bridge regression suite', () => {
   assert.match(pkg.scripts.test, /modules\/mood-health\/tests\/\*\.test\.ts/);
 });
+
+test('system date/time picker is installed at the Expo-compatible version and configured', () => {
+  const bundled = createRequire(import.meta.url)('expo/bundledNativeModules.json');
+  assert.equal(
+    pkg.dependencies['@react-native-community/datetimepicker'],
+    bundled['@react-native-community/datetimepicker'],
+  );
+  assert.ok(app.plugins.includes('@react-native-community/datetimepicker'));
+});
