@@ -85,7 +85,7 @@ export function parseBackup(raw: string): MoodEntry[] {
   if (!value || typeof value !== 'object') throw new Error('无法识别这个备份文件。');
   const backup = value as { app?: string; version?: number; entries?: unknown };
   if (backup.app !== 'moodtracker' || backup.version !== 2)
-    throw new Error('请选择 MoodTracker 导出的备份文件。');
+    throw new Error('请选择情绪像素导出的备份文件。');
   return validateEntries(backup.entries);
 }
 export function createMoodStorage(

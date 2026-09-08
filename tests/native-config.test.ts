@@ -101,6 +101,25 @@ test('system date/time picker is installed at the Expo-compatible version and co
   assert.ok(app.plugins.includes('@react-native-community/datetimepicker'));
 });
 
+test('native splash supports both screen appearances without showing an opaque app icon tile', () => {
+  const bundled = createRequire(import.meta.url)('expo/bundledNativeModules.json');
+  assert.equal(pkg.dependencies['expo-splash-screen'], bundled['expo-splash-screen']);
+  const splash = app.plugins.find(
+    (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
+  )?.[1];
+  assert.ok(splash);
+  const splashIndex = app.plugins.findIndex(
+    (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
+  );
+  const plainIndex = app.plugins.indexOf('./plugins/with-plain-splash');
+  assert.ok(plainIndex >= 0 && plainIndex < splashIndex);
+  assert.equal(splash.image, undefined);
+  assert.equal(splash.backgroundColor, '#F4F5FB');
+  assert.equal(splash.dark.backgroundColor, '#0B0D18');
+  assert.equal(splash.enableFullScreenImage_legacy, undefined);
+  assert.equal(app.splash, undefined);
+});
+
 test('widget extension signing metadata and the optional calendar module share the App Group', () => {
   const widgetPlugin = createRequire(import.meta.url)('../plugins/with-quick-record-widget.js');
   const configured = widgetPlugin(structuredClone(app));

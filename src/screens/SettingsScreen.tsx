@@ -247,7 +247,7 @@ export default function SettingsScreen() {
             <Card>
               <SectionTitle title="桌面小组件" subtitle="记录用小卡片，日历用大卡片" />
               <Label style={{ fontSize: 13, lineHeight: 23 }}>
-                长按主屏幕空白处，选择添加小组件，搜索「心情日记」。添加小号「快速记录」和大号「心情日历」，再拖到喜欢的位置。
+                长按主屏幕空白处，选择添加小组件，搜索「情绪像素」。添加小号「快速记录」和大号「心情日历」，再拖到喜欢的位置。
               </Label>
               <Label muted style={{ fontSize: 12, lineHeight: 22, marginTop: 10 }}>
                 小卡片轻点即记，已有输入会保留。大卡片显示本月的本地心情，轻点日期查看当天记录；保存后由系统安排刷新。
@@ -294,7 +294,7 @@ export default function SettingsScreen() {
                 从 JSON 备份导入
               </Button>
               <Label muted style={{ fontSize: 11, lineHeight: 21 }}>
-                导入会保留原有记录，只添加新记录。相同编号的记录会跳过，不会覆盖本地修改。支持原版心情日记备份。
+                导入会保留原有记录，只添加新记录。相同编号的记录会跳过，不会覆盖本地修改。兼容旧版日记备份。
               </Label>
             </View>
           </Card>
@@ -327,7 +327,7 @@ export default function SettingsScreen() {
           </Label>
         </Disclosure>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
-          MoodTracker · 2.1.4
+          情绪像素 · 2.1.5
         </Label>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
           用于自我记录与觉察，不提供诊断或治疗，不能替代专业支持。

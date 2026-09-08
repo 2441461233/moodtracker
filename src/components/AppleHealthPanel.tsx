@@ -9,8 +9,8 @@ import { Sheet } from './Sheet';
 
 const unavailableCopy = {
   available: '',
-  ios_version: '自动同步 Apple 心境需要 iOS 18 或更新版本。心情日记仍可正常使用。',
-  health_data_unavailable: '这台设备目前无法使用 Apple 健康。心情日记不受影响。',
+  ios_version: '自动同步 Apple 心境需要 iOS 18 或更新版本。情绪像素仍可正常使用。',
+  health_data_unavailable: '这台设备目前无法使用 Apple 健康。情绪像素不受影响。',
   native_module_missing: '需要安装包含健康功能的新版 iOS App；Expo Go 和旧安装包不支持。',
   unsupported_platform: '仅支持 iOS 18 及以上的原生 App。网页版和 Android 无法访问 Apple 健康。',
 };
@@ -260,7 +260,7 @@ export function AppleHealthPanel() {
                     <>
                       <Label muted style={{ fontSize: 11, lineHeight: 21 }}>
                         若曾拒绝权限，请先在健康 App 的个人资料 → App →
-                        心情日记中允许“心境”写入，再重新连接。已启用的同步范围与隐私约定不变。
+                        情绪像素中允许“心境”写入，再重新连接。已启用的同步范围与隐私约定不变。
                       </Label>
                       <Button
                         kind="secondary"
@@ -293,7 +293,7 @@ export function AppleHealthPanel() {
                     <Label style={{ fontSize: 13 }}>最近一年暂未读取到心境</Label>
                     <Label muted style={{ fontSize: 12, lineHeight: 22 }}>
                       可能是没有记录，也可能是未允许读取。请在健康 App 的个人资料 → App →
-                      心情日记中检查“心境”权限。
+                      情绪像素中检查“心境”权限。
                     </Label>
                   </View>
                 ) : (

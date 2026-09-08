@@ -201,7 +201,7 @@ export function createHealthAutoSync(options: {
           }
         } else {
           error =
-            '自动写入已暂停：请在健康 App 的权限设置中允许“心情日记”写入心境。读取不会因此被关闭。';
+            '自动写入已暂停：请在健康 App 的权限设置中允许“情绪像素”写入心境。读取不会因此被关闭。';
         }
       } catch (failure) {
         const safe = toSafeHealthError(failure);

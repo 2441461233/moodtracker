@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const output = new URL('../dist/', import.meta.url);
 const base = '/moodtracker/';
 const origin = 'https://2441461233.github.io';
-const title = 'MoodTracker · 心情日记';
+const title = '情绪像素';
 const description =
   '每一天，都值得被看见。记录心情、回看日历、发现生活里的小规律。无需注册，心情只在本设备保存。';
 
@@ -19,8 +19,8 @@ await writeFile(
   JSON.stringify(
     {
       id: base,
-      name: 'MoodTracker · 心情日记',
-      short_name: '心情日记',
+      name: '情绪像素',
+      short_name: '情绪像素',
       description,
       start_url: base,
       scope: base,

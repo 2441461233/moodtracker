@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDisplayName</key>
-  <string>心情日记小组件</string>
+  <string>情绪像素小组件</string>
   <key>CFBundleExecutable</key>
   <string>$(EXECUTABLE_NAME)</string>
   <key>CFBundleIdentifier</key>

@@ -85,14 +85,12 @@ export function Navigation({ state, navigation, descriptors }: BottomTabBarProps
           <Image
             source={require('../../assets/brand-icon.png')}
             style={{ width: 39, height: 39, borderRadius: 14 }}
-            accessibilityLabel="MoodTracker"
+            accessibilityLabel="情绪像素"
           />
           <View>
-            <Label style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.6 }}>
-              moodtracker<Label style={{ color: theme.accent, fontSize: 20 }}>.</Label>
-            </Label>
-            <Label muted style={{ fontSize: 10, letterSpacing: 3 }}>
-              心 情 日 记
+            <Label style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.6 }}>情绪像素</Label>
+            <Label muted style={{ fontSize: 10, letterSpacing: 1 }}>
+              记录每一种感受
             </Label>
           </View>
         </View>

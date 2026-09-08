@@ -27,7 +27,7 @@ export async function exportText(
   file.write(content);
   await Sharing.shareAsync(file.uri, {
     mimeType,
-    dialogTitle: '保存心情日记备份',
+    dialogTitle: '保存情绪像素备份',
     UTI: mimeType === 'text/csv' ? 'public.comma-separated-values-text' : 'public.json',
   });
 }

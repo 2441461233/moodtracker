@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import TodayScreen from './src/screens/TodayScreen';
@@ -21,6 +22,17 @@ import { moodStorage } from './src/storage';
 import { exportText } from './src/lib/transfer';
 import { QuickRecordProvider } from './src/context/QuickRecordContext';
 import { navigationRef } from './src/lib/navigation';
+
+// Keep the native launch screen visible until the first usable screen has laid out.
+if (Platform.OS !== 'web') {
+  void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+}
+
+function hideNativeSplash() {
+  if (Platform.OS !== 'web') {
+    void SplashScreen.hideAsync().catch(() => undefined);
+  }
+}
 
 // Web defaults to plain Views; enable screen detachment so transparent tabs cannot overlap.
 enableScreens();
@@ -44,6 +56,8 @@ function AppContent() {
   const { desktop } = useLayout();
   const { composer, detail, breathing, ready, toast, storageError } = useMood();
   const dark = theme.dark;
+  // Native keeps the system splash here, so saved appearance is applied before it disappears.
+  if (!ready && Platform.OS !== 'web') return null;
   if (!ready)
     return (
       <View
@@ -61,7 +75,7 @@ function AppContent() {
     );
   if (storageError) return <RecoveryScreen message={storageError} />;
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View onLayout={hideNativeSplash} style={{ flex: 1, backgroundColor: theme.background }}>
       <AmbientBackground />
       <NavigationContainer
         ref={navigationRef}
@@ -91,22 +105,22 @@ function AppContent() {
           <Tab.Screen
             name="today"
             component={TodayScreen}
-            options={{ title: '今日心情 · MoodTracker' }}
+            options={{ title: '今日心情 · 情绪像素' }}
           />
           <Tab.Screen
             name="calendar"
             component={CalendarScreen}
-            options={{ title: '情绪记录 · MoodTracker' }}
+            options={{ title: '情绪记录 · 情绪像素' }}
           />
           <Tab.Screen
             name="insights"
             component={InsightsScreen}
-            options={{ title: '情绪洞察 · MoodTracker' }}
+            options={{ title: '情绪洞察 · 情绪像素' }}
           />
           <Tab.Screen
             name="settings"
             component={SettingsScreen}
-            options={{ title: '我的空间 · MoodTracker' }}
+            options={{ title: '我的空间 · 情绪像素' }}
           />
         </Tab.Navigator>
       </NavigationContainer>
@@ -162,6 +176,7 @@ function RecoveryScreen({ message }: { message: string }) {
   };
   return (
     <View
+      onLayout={hideNativeSplash}
       style={{
         flex: 1,
         backgroundColor: theme.background,

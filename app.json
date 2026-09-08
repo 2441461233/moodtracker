@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "心情日记",
+    "name": "情绪像素",
     "slug": "moodtracker",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "description": "一个只属于你的心情空间。记录感受、回看日历、发现生活与情绪的小关联。",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
@@ -10,6 +10,16 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-font",
+      "./plugins/with-plain-splash",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F4F5FB",
+          "dark": {
+            "backgroundColor": "#0B0D18"
+          }
+        }
+      ],
       "./plugins/with-quick-record-widget",
       "@react-native-community/datetimepicker",
       [
@@ -21,11 +31,6 @@
         }
       ]
     ],
-    "splash": {
-      "image": "./assets/app-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F7F8FC"
-    },
     "ios": {
       "scheme": "moodjournal",
       "supportsTablet": true,

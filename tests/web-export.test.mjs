@@ -179,7 +179,7 @@ describe('published artifact paths and metadata', () => {
     assert.ok(references.some((path) => path.startsWith(BASE + '_expo/static/js/web/')));
     assert.ok(references.includes(BASE + 'register-sw.js'));
     assert.match(html, /<html lang="zh-CN">/);
-    assert.match(html, /<title>MoodTracker · 心情日记<\/title>/);
+    assert.match(html, /<title>情绪像素<\/title>/);
     assert.match(meta('viewport'), /viewport-fit=cover/);
     assert.equal((await stat(join(DIST, '.nojekyll'))).isFile(), true);
   });
@@ -208,7 +208,7 @@ describe('published artifact paths and metadata', () => {
     assert.equal(meta('twitter:card'), 'summary_large_image');
     assert.equal(meta('og:type'), 'website');
     assert.equal(meta('og:locale'), 'zh_CN');
-    assert.equal(meta('og:title'), 'MoodTracker · 心情日记');
+    assert.equal(meta('og:title'), '情绪像素');
     assert.ok(meta('description').length > 20);
     assert.match(
       html,
