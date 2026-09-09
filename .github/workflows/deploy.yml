@@ -48,14 +48,23 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 50
     permissions:
+      contents: read
       pages: write
       id-token: write
+      actions: read
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Require native recording UI verification for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/wait-native-ui.mjs
       - uses: actions/configure-pages@v5
       - name: Deploy verified build
         id: deployment

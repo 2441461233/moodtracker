@@ -8,6 +8,7 @@ target.add_dependency(app)
 target.build_configurations.each do |configuration|
   configuration.build_settings.merge!({
     'SWIFT_VERSION' => '5.0',
+    'PRODUCT_NAME' => '$(TARGET_NAME)',
     'PRODUCT_BUNDLE_IDENTIFIER' => 'com.zhenyu.moodjournal.app.UITests',
     'GENERATE_INFOPLIST_FILE' => 'YES',
     'TEST_TARGET_NAME' => app.name,

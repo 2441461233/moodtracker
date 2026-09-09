@@ -27,6 +27,7 @@ set +e
 xcodebuild test -workspace "$ui_workspace" -scheme MoodTrackerUI \
   -configuration Release -destination "platform=iOS Simulator,id=$ui_device" \
   -derivedDataPath "$ui_derived" -resultBundlePath "$ui_logs/NativeUI.xcresult" \
+  ONLY_ACTIVE_ARCH=YES ARCHS="$(uname -m)" \
   -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
   CODE_SIGN_IDENTITY='' 2>&1 | tee "$ui_logs/native-ui.log"
 ui_status=${PIPESTATUS[0]}

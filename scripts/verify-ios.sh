@@ -138,6 +138,7 @@ xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath "$ios_verify_output/DerivedData" \
   -resultBundlePath "$ios_verify_logs/NativeBuild.xcresult" \
+  ONLY_ACTIVE_ARCH=YES ARCHS="$(uname -m)" \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGN_IDENTITY='' \
