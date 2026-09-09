@@ -32,6 +32,9 @@ jobs:
         run: npm test
         env:
           TZ: Asia/Shanghai
+      # Voice provider calls are mocked; CI requires no private API keys.
+      - name: Test voice transcription service
+        run: npm run test:voice-server
       - name: Build production web app
         run: npm run build:web
         env:

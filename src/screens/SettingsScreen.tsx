@@ -6,6 +6,7 @@ import { Button, Card, Disclosure, Icon, Label, SectionTitle, Segment } from '..
 import { Gradient } from '../components/effects';
 import { Sheet } from '../components/Sheet';
 import { AppleHealthPanel } from '../components/AppleHealthPanel';
+import { VoiceServicePanel } from '../components/VoiceServicePanel';
 import { font, useLayout, useTheme } from '../theme';
 import { AppSettings, MoodEntry } from '../types';
 import { parseBackup } from '../storage/core';
@@ -261,8 +262,9 @@ export default function SettingsScreen() {
           style={{ flex: desktop ? 1 : undefined, width: desktop ? undefined : '100%', gap: 24 }}
         >
           <AppleHealthPanel />
+          <VoiceServicePanel />
           <Card>
-            <SectionTitle title="备份与导入" subtitle="导出完整备份，或把记录带到另一台设备" />
+            <SectionTitle title="备份与导入" subtitle="备份心情与文字，原声可在记录详情单独导出" />
             <View style={{ gap: 13 }}>
               <Button
                 kind="secondary"
@@ -272,7 +274,7 @@ export default function SettingsScreen() {
                   void exportData(false);
                 }}
               >
-                导出 JSON 备份
+                导出 JSON 文字备份
               </Button>
               <Button
                 kind="ghost"
@@ -296,7 +298,8 @@ export default function SettingsScreen() {
                 从 JSON 备份导入
               </Button>
               <Label muted style={{ fontSize: 11, lineHeight: 21 }}>
-                导入会保留原有记录，只添加新记录。相同编号的记录会跳过，不会覆盖本地修改。兼容旧版日记备份。
+                JSON
+                包含心情、转写及补充文字，不包含原声文件。导入只添加新记录，相同编号会跳过。兼容旧版日记备份。
               </Label>
             </View>
           </Card>
@@ -311,15 +314,16 @@ export default function SettingsScreen() {
       </View>
       <View style={{ borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 16, gap: 4 }}>
         <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
-          记录保存在本设备。换设备或卸载前，请先导出备份。
+          记录与原声保存在本设备。换设备或卸载前，请备份文字并导出需要保留的原声。
         </Label>
         <Disclosure title="隐私与本地保存">
           <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
-            无需注册，笔记、活动与洞察在本地处理，不上传到我们的服务器。Apple
+            无需注册，手写补充文字、活动与洞察在本地处理。Apple
             健康同步需你主动连接并授权，文字笔记不参与同步。
           </Label>
           <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
-            不接入 AI 情绪分析，不设置广告与追踪统计，不自动上传文字日记。
+            云端语音转写需在上方主动开启，只发送所选录音与识别文字。AI
+            仅整理语句，不分析或判断情绪。补充文字、活动与健康数据不参与转写。
           </Label>
           <Label muted style={{ fontSize: 12, lineHeight: 21 }}>
             网页记录保存在当前浏览器，原生应用记录保存在应用内。更换设备、浏览器或网址后，需要导入备份才能恢复记录。

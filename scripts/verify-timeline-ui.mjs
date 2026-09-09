@@ -48,6 +48,20 @@ const result = await build({
     {
       name: 'isolated-health-ui-fixture',
       setup(builder) {
+        builder.onResolve(
+          { filter: /^expo-audio$|^expo\/fetch$|(?:^|\/)voice\/(?:files|config)$/ },
+          () => ({ path: join(fixture, 'voice-services.tsx') }),
+        );
+        builder.onResolve({ filter: /^\.\/(?:files|config)$/ }, (args) =>
+          args.importer.endsWith('/voice/jobs.ts')
+            ? { path: join(fixture, 'voice-services.tsx') }
+            : undefined,
+        );
+        builder.onResolve({ filter: /^\.\.\/storage$/ }, (args) =>
+          args.importer.endsWith('/voice/jobs.ts')
+            ? { path: join(fixture, 'performance-services.tsx') }
+            : undefined,
+        );
         if (performance) {
           const services = join(fixture, 'performance-services.tsx');
           builder.onResolve(

@@ -15,6 +15,8 @@ import { moodStorage } from '../storage';
 import { DEFAULT_SETTINGS } from '../storage/core';
 import { darkTheme, lightTheme, ThemeContext } from '../theme';
 import { HealthSyncProvider } from './HealthSyncContext';
+import { cancelVoiceJob, flushVoiceJob, resumeVoiceJobs, subscribeVoiceJobs } from '../voice/jobs';
+import { removeRecording } from '../voice/files';
 
 export interface ComposerRequest {
   emotionId?: EmotionId;
@@ -158,6 +160,16 @@ export function MoodProvider({ children }: PropsWithChildren) {
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, [reload]);
+  useEffect(
+    () =>
+      subscribeVoiceJobs(() => {
+        void reload();
+      }),
+    [reload],
+  );
+  useEffect(() => {
+    if (ready && !storageError) resumeVoiceJobs(entries);
+  }, [entries, ready, storageError]);
   const feedback = useCallback(
     (success = false) => {
       if (!settings.haptics || Platform.OS === 'web') return;
@@ -187,11 +199,25 @@ export function MoodProvider({ children }: PropsWithChildren) {
             ? moodStorage.update(entry, composerRef.current?.entry)
             : moodStorage.save(entry)),
         );
+        // The entry is already committed. A later transcript write must never
+        // report that save as failed and invite a duplicate submission.
+        if (entry.voice) {
+          try {
+            setEntries(await flushVoiceJob(entry.voice.id));
+          } catch {
+            /* retry from retained job */
+          }
+        }
         feedback(true);
         notify(editing ? '修改已保存，每一种感受都值得被记录。' : '已记录这一刻，谢谢你照顾自己。');
       },
       removeEntry: async (id, expected) => {
+        const before = (await moodStorage.read()).find((entry) => entry.id === id);
         setEntries(await moodStorage.remove(id, expected));
+        if (before?.voice) {
+          cancelVoiceJob(before.voice.id);
+          void removeRecording(before.voice).catch(() => undefined);
+        }
         notify('这条记录已删除。');
       },
       updateSettings: async (next) => {

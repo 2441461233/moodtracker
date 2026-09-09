@@ -2,6 +2,7 @@ import { MoodEntry } from '../types';
 import { dayKey, formatTime } from './dates';
 import { getActivity, getActivityIds } from '../data/activities';
 import { MAX_BACKUP_BYTES, utf8Bytes } from '../storage/core';
+import { entryText } from '../voice/core';
 
 const labels = {
   joyful: '很开心',
@@ -36,7 +37,7 @@ export function makeCSV(entries: MoodEntry[]): string {
       getActivityIds(entry)
         .map((id) => getActivity(id)?.label ?? id)
         .join('、'),
-      entry.note ?? '',
+      entryText(entry),
     ]),
   ];
   return '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n');

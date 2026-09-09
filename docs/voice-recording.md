@@ -1,0 +1,74 @@
+# 语音记录与云端转写
+
+基于用户确认的最新远端 main `9417969`（2026-09-09 21:28）开发。本次尚未发布到网页或 TestFlight。第三步默认进入语音记录：点击开始，可暂停、继续，结束后先保存本机原声，再自动转写。参考 [flomo 语音笔记](https://help.flomoapp.com/ai/aivoice.html) 的轻操作与正文呈现方式，AI 整理结果默认展开，识别原文折叠，原声提供回听与导出。文字输入作为独立补充保留。
+
+## 服务配置
+
+使用 Node.js 22 或更新版本，在项目根目录运行：
+
+```bash
+# 已配置的 .env 请直接保留，不要覆盖
+cp server/.env.example server/.env
+# 编辑 server/.env 填写硅基流动 API Key 和随机访问口令
+npm run voice:server
+```
+
+本工作区的 `server/.env` 已由用户配置，并完成真实接口联调。它被 Git 和 EAS 忽略。配置项：
+
+| 配置                  | 用途                                                  |
+| --------------------- | ----------------------------------------------------- |
+| `SILICONFLOW_API_KEY` | 仅保存在后端的供应商密钥                              |
+| `VOICE_ACCESS_TOKEN`  | 至少 24 字符的随机口令，App 用来访问这个私人后端      |
+| `ASR_MODEL`           | `FunAudioLLM/SenseVoiceSmall`，语音识别               |
+| `CLEANUP_MODEL`       | `deepseek-ai/DeepSeek-V4-Flash`，整理标点、口癖和分段 |
+| `HOST` / `PORT`       | 默认 `127.0.0.1:3100`；容器部署可用 `0.0.0.0`         |
+| `ALLOWED_ORIGINS`     | 允许访问后端的网页 Origin，英文逗号分隔               |
+
+本地网页预览使用 `http://localhost:8097/moodtracker/` 时，将 `http://localhost:8097` 加入 `ALLOWED_ORIGINS`。线上网页需要加入 `https://2441461233.github.io`。原生请求不发送网页 Origin，仍必须通过访问口令鉴权。
+
+App 内打开「我的空间 → 语音与 AI 转写 → 连接转写服务」，输入后端地址与 `VOICE_ACCESS_TOKEN`，开启自动转写并保存。此处不填写硅基流动 API Key。原生访问口令存于 SecureStore；网页仅在当前标签页的 sessionStorage 中保留。
+
+电脑本地服务可用 `http://127.0.0.1:3100`；iOS 模拟器也可访问主机回环地址。真实手机需要已部署的 HTTPS 后端地址，`localhost` 指向手机本身。当前仓库的 GitHub Pages 只托管静态网页，不能运行此 Node 服务。部署需要运行 Node 的主机与 HTTPS 反向代理：将请求体上限设为至少 12 MB、上游超时设为至少 155 秒，关闭请求体日志及缓存。当前鉴权和限流面向个人使用；公开多用户服务需要独立用户身份与每人配额。
+
+新增 `expo-audio`、`expo-secure-store` 和麦克风用途声明，需要重新构建原生安装包，已有 TestFlight 二进制不能只靠 JS 更新获得这些模块。
+
+## 打包发布前
+
+1. 拉取最新 `main`，运行 `npm ci` 和 `npm run verify`；确认该提交的 GitHub Actions 原生检查通过，并在真机试用录音、回听、转写和键盘交互。
+2. 单独部署 HTTPS 转写后端，在部署平台的环境变量中配置 `SILICONFLOW_API_KEY` 与 `VOICE_ACCESS_TOKEN`。真实密钥不提交 GitHub，也不写进 App 配置或安装包；仓库中的 `server/.env.example` 仅作模板。
+3. 打包时更新版本号与构建号，并完成原生构建。当前仍沿用 2.1.9 的版本配置，不代表语音版已发布。
+4. 安装新包后，在「连接转写服务」填写后端地址和访问口令，开启自动转写。只推送 GitHub 或打包 App 不会自动部署后端，也不会复制本机的服务配置。
+
+## 模型选择
+
+2026-09-09 通过账号 `/v1/models` 确认上述两个模型可用。硅基流动的 [SenseVoiceSmall 接口](https://api-docs.siliconflow.cn/docs/api/audio-transcriptions-post) 支持上传录音；[价格页](https://siliconflow.cn/pricing) 当前列为免费，价格可能调整。DeepSeek Flash 使用 [Chat Completions](https://api-docs.siliconflow.cn/docs/api/chat-completions-post)，关闭思考，只整理文字，不进行情绪分析。DeepSeek 不承担语音识别。
+
+整理失败或生成被截断时，仍展示完整识别原文，并提示可手动修改。提示词要求保留第一人称、事实、否定与不确定性；模型仍可能识别或整理有误，所以始终保留原文和本机原声。
+
+## 保存与异常行为
+
+- 单段最长 5 分钟、12 MB。录音与暂停期间关闭、切步、切模式和保存均被锁定；进入后台会暂停，不启用后台录音。
+- 原生音频复制到应用文档目录；网页音频存于独立 IndexedDB。未保存草稿关闭后清理其新音频；重新录制保留原附件至记录成功保存后才替换；删除记录同时清理本机原声。
+- 原声保存失败时保留当前捕获结果，允许重试保存。网络失败保留原声，可重新转写。未开启服务时仍可保存录音。
+- 转写期间可以先保存。后台结果通过同一存储队列合并，已删除或已替换的记录不会复活；手工编辑过的正文不会被后到的结果覆盖。重启时只恢复已保存的待转写任务。
+- JSON 备份包含心情、AI 正文、识别原文和补充文字，不包含音频二进制；导入会去掉本机音频引用。需要的原声请在记录内单独导出。CSV 和本地列表搜索包含转写正文。
+- 供应商密钥不会进入客户端。服务不写音频、文字日志或磁盘文件。为了避免短时间重试重复计费，服务最多缓存 32 个转写结果及音频摘要，最长 5 分钟；过期内容在下次请求时清理。云服务商的处理政策以其条款为准。
+- 服务校验访问口令、Origin、音频容器、大小和时长元数据，限制 2 个并发、每分钟 10 次请求，120 秒上游超时。不信任客户端提供的文件路径。
+
+## 键盘与界面
+
+保留原有独立的文字输入状态，新增的计时/音量轮询也只更新录音组件。弹层不再在键盘出现时同时切换底部安全区留白及插入顶部按钮；键盘收起按钮占位固定，键盘事件只更新该小组件，布局避让由 KeyboardAvoidingView 负责。原生 UI 测试覆盖默认语音、切换文字、键盘出现、浅深色保存按钮与输入保留；是否满足真实 iPhone 上的流畅度仍需真机试用，浏览器渲染计数不代表手机帧率。
+
+## 验证
+
+```bash
+npm run verify
+node scripts/verify-timeline-ui.mjs --performance
+MOODTRACKER_IOS_UI_TESTS=1 bash scripts/verify-ios.sh
+```
+
+自动化使用内存数据、合成音频与模拟服务，不读取个人日记。接口联调用 macOS 合成中文语音，经本地后端实际调用两个供应商模型：HTTP 200，本次共 1.3 秒，识别与整理结果均返回，否定表述「我并没有解决所有问题」保留。单次结果不代表普遍延迟或识别准确率。
+
+当前通过 TypeScript 检查、216 项应用测试、5 项服务测试、19 项网页导出检查和生产 Web 构建。隔离 UI 已检查录音、暂停、继续、转写正文默认展开、手动修改、输入模式切换与保存；原生验证目前阻塞在 Xcode 环境：本机 Xcode 26.6 要求 iOS 26.5 平台组件，只有 iOS 26.4 运行时，`xcodebuild` 无可用构建目标，尚未编译和运行模拟器测试。CocoaPods 安装与原生自动链接已完成，已确认 ExpoAudio / ExpoSecureStore target 和 AudioModule / SecureStoreModule 注册。真实麦克风录音与 iPhone 键盘流畅度仍待原生验收。
+
+原生环境诊断日志在本机 `/tmp/moodtracker-voice-ios-resume.log`。当前临时工具链仅放在忽略目录 `.expo/native-gems`，使用 CocoaPods 1.16.2 与 JSON 2.9.1，避免系统 Ruby 环境改动；初始 JSON 3 的兼容错误已解决。补齐 Xcode 平台后可从已生成的 `ios` 项目继续构建。

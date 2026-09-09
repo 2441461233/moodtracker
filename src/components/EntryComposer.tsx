@@ -1,7 +1,7 @@
-import React, { memo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useMoodOverlays, useMoodActions } from '../context/MoodContext';
-import { EmotionId, MoodEntry } from '../types';
+import { EmotionId, MoodEntry, VoiceRecording } from '../types';
 import { ACTIVITIES, getActivityIds } from '../data/activities';
 import { dayKey, formatTime, parseEntryTime } from '../lib/dates';
 import { font, MOOD_APPEARANCE, useTheme } from '../theme';
@@ -9,6 +9,9 @@ import { Button, Icon, Label, MoodIcon } from './ui';
 import { Gradient } from './effects';
 import { Sheet } from './Sheet';
 import { EntryDateTimeFields } from './EntryDateTimeFields';
+import { VoiceInput } from './VoiceInput';
+import { cancelVoiceJob, currentVoice } from '../voice/jobs';
+import { removeRecording } from '../voice/files';
 
 export function EntryComposer() {
   const { composer } = useMoodOverlays();
@@ -23,6 +26,32 @@ export function EntryComposer() {
   );
   const [activities, setActivities] = useState<string[]>(entry ? getActivityIds(entry) : []);
   const note = useRef(entry?.note ?? '');
+  const voice = useRef<VoiceRecording | undefined>(entry?.voice);
+  const [inputMode, setInputMode] = useState<'voice' | 'text'>(
+    entry?.note && !entry.voice ? 'text' : 'voice',
+  );
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const created = useRef<VoiceRecording[]>([]);
+  const saved = useRef(false);
+  const mounted = useRef(true);
+  const onVoiceCreated = useCallback((next: VoiceRecording) => {
+    if (!mounted.current) {
+      void removeRecording(next).catch(() => undefined);
+      return;
+    }
+    created.current.push(next);
+  }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      for (const item of created.current)
+        if (!saved.current || item.id !== voice.current?.id) {
+          cancelVoiceJob(item.id);
+          void removeRecording(item).catch(() => undefined);
+        }
+    };
+  }, []);
   const [date, setDate] = useState(dayKey(initialDate));
   const [time, setTime] = useState(initialTime);
   const [step, setStep] = useState(entry ? 0 : composer?.emotionId ? 1 : 0);
@@ -35,12 +64,12 @@ export function EntryComposer() {
     entry?.id ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`,
   );
   const requestClose = () => {
-    if (lock.current) return;
+    if (lock.current || voiceBusy) return;
     Keyboard.dismiss();
     closeComposer();
   };
   const save = async () => {
-    if (!emotion || lock.current) return;
+    if (!emotion || lock.current || voiceBusy) return;
     Keyboard.dismiss();
     let parsed: Date;
     try {
@@ -60,6 +89,7 @@ export function EntryComposer() {
         emotionId: emotion,
         activityIds: activities,
         note: note.current.trim() || undefined,
+        voice: currentVoice(voice.current),
         timestamp:
           entry && date === dayKey(entry.timestamp) && time === formatTime(entry.timestamp)
             ? entry.timestamp
@@ -67,6 +97,11 @@ export function EntryComposer() {
         ...(entry ? { updatedAt: Date.now() } : {}),
       };
       await persistEntry(updated, !!entry);
+      saved.current = true;
+      if (entry?.voice && entry.voice.id !== updated.voice?.id) {
+        cancelVoiceJob(entry.voice.id);
+        void removeRecording(entry.voice).catch(() => undefined);
+      }
       closeComposer();
     } catch (error) {
       setError(
@@ -81,7 +116,7 @@ export function EntryComposer() {
   const hints = [
     '选一个最接近的感受，不需要想太多。',
     '可能影响心情的事情，可多选或跳过。',
-    '不必写得很好，真实就已经足够。',
+    '说出来，也是一种记录。',
   ];
   return (
     <Sheet
@@ -89,7 +124,7 @@ export function EntryComposer() {
       stableHeight
       scrollKey={step}
       scrollRef={scroll}
-      dismissDisabled={saving}
+      dismissDisabled={saving || voiceBusy}
       contentDisabled={saving}
       title={entry ? '编辑这一刻' : '记录这一刻'}
       onClose={requestClose}
@@ -110,7 +145,7 @@ export function EntryComposer() {
                 onPress={() => setStep(step - 1)}
                 kind="secondary"
                 icon="arrow-left"
-                disabled={saving}
+                disabled={saving || voiceBusy}
               >
                 上一步
               </Button>
@@ -118,12 +153,20 @@ export function EntryComposer() {
             <Button
               testID="composer-next"
               onPress={step === 2 ? save : () => setStep(step + 1)}
-              disabled={!emotion}
+              disabled={!emotion || voiceBusy}
               busy={saving}
               icon={step === 2 ? 'check' : 'arrow-right'}
               style={{ flex: 1 }}
             >
-              {saving ? '正在保存…' : step === 2 ? (entry ? '保存修改' : '保存这一刻') : '继续'}
+              {saving
+                ? '正在保存…'
+                : voiceBusy
+                  ? '请先结束录音'
+                  : step === 2
+                    ? entry
+                      ? '保存修改'
+                      : '保存这一刻'
+                    : '继续'}
             </Button>
           </View>
           {step < 2 && emotion && (
@@ -302,11 +345,43 @@ export function EntryComposer() {
               </View>
             </View>
           )}
-          <NoteInput
-            draft={note}
-            maxLength={Math.max(1000, entry?.note?.length ?? 0)}
-            disabled={saving}
-          />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button
+              testID="composer-mode-voice"
+              kind={inputMode === 'voice' ? 'secondary' : 'ghost'}
+              icon="microphone"
+              disabled={saving || voiceBusy}
+              onPress={() => {
+                Keyboard.dismiss();
+                setInputMode('voice');
+              }}
+            >
+              语音记录
+            </Button>
+            <Button
+              testID="composer-mode-text"
+              kind={inputMode === 'text' ? 'secondary' : 'ghost'}
+              icon="keyboard-outline"
+              disabled={saving || voiceBusy}
+              onPress={() => setInputMode('text')}
+            >
+              {voice.current ? '补充文字' : '文字记录'}
+            </Button>
+          </View>
+          {inputMode === 'voice' ? (
+            <VoiceInput
+              draft={voice}
+              disabled={saving}
+              onBusy={setVoiceBusy}
+              onCreated={onVoiceCreated}
+            />
+          ) : (
+            <NoteInput
+              draft={note}
+              maxLength={Math.max(1000, entry?.note?.length ?? 0)}
+              disabled={saving}
+            />
+          )}
           <View style={{ gap: 8 }}>
             <Label muted style={{ fontSize: 12 }}>
               这个瞬间发生在
@@ -314,7 +389,7 @@ export function EntryComposer() {
             <EntryDateTimeFields
               date={date}
               time={time}
-              disabled={saving}
+              disabled={saving || voiceBusy}
               onChange={(next) => {
                 setDate(next.date);
                 setTime(next.time);
@@ -329,7 +404,9 @@ export function EntryComposer() {
           <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
             <Icon name="lock-outline" size={13} color={theme.muted} />
             <Label muted style={{ fontSize: 11, flex: 1 }}>
-              仅保存在本设备，不会发送给 AI 或其他人。
+              {inputMode === 'voice'
+                ? '原声保存在本设备。启用云端转写后，本段语音会发送至硅基流动识别并整理。'
+                : '补充文字保存在本设备，不会发送至转写服务。'}
             </Label>
           </View>
         </View>

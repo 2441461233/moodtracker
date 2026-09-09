@@ -1,5 +1,6 @@
-import { MoodEntry, AppSettings, EmotionId, CategoryId } from '../types';
+import { MoodEntry, AppSettings, EmotionId, CategoryId, VoiceRecording } from '../types';
 import { ACTIVITIES } from '../data/activities';
+import { validateVoice } from '../voice/core';
 
 export const STORAGE_KEY = 'mood_entries';
 export const SETTINGS_KEY = 'moodtracker_settings_v2';
@@ -13,6 +14,17 @@ export interface StorageAdapter {
   setItem(key: string, value: string): Promise<void>;
 }
 export type StorageCoordinator = <T>(operation: () => Promise<T>) => Promise<T>;
+
+// Automatic transcription is not a concurrent user edit. Keep attachment
+// identity and manually edited text in the optimistic conflict comparison.
+function editSnapshot(entry: MoodEntry): string {
+  const value = validateEntries([entry])[0];
+  if (value.voice && !value.voice.edited) {
+    const { status, transcript, originalTranscript, error, ...attachment } = value.voice;
+    return JSON.stringify({ ...value, voice: attachment });
+  }
+  return JSON.stringify(value);
+}
 
 export function utf8Bytes(raw: string): number {
   let bytes = 0;
@@ -64,6 +76,7 @@ export function validateEntries(value: unknown): MoodEntry[] {
           ? { activityIds: [...new Set(entry.activityIds)] }
           : {}),
         ...(entry.updatedAt !== undefined ? { updatedAt: entry.updatedAt } : {}),
+        ...(entry.voice !== undefined ? { voice: validateVoice(entry.voice) } : {}),
       };
     })
     .sort((a, b) => b.timestamp - a.timestamp);
@@ -81,12 +94,28 @@ export function parseBackup(raw: string): MoodEntry[] {
   } catch {
     throw new Error('这不是有效的 JSON 备份文件。');
   }
-  if (Array.isArray(value)) return validateEntries(value);
+  // JSON carries transcription text, not audio files. Do not let imported
+  // metadata claim another record's local audio attachment.
+  const imported = (entries: unknown) =>
+    validateEntries(entries).map((entry) =>
+      entry.voice
+        ? {
+            ...entry,
+            voice: {
+              ...entry.voice,
+              fileName: undefined,
+              status: entry.voice.transcript ? ('ready' as const) : ('failed' as const),
+              error: entry.voice.transcript ? undefined : '此文字备份不包含原声。',
+            },
+          }
+        : entry,
+    );
+  if (Array.isArray(value)) return imported(value);
   if (!value || typeof value !== 'object') throw new Error('无法识别这个备份文件。');
   const backup = value as { app?: string; version?: number; entries?: unknown };
   if (backup.app !== 'moodtracker' || backup.version !== 2)
     throw new Error('请选择情绪像素导出的备份文件。');
-  return validateEntries(backup.entries);
+  return imported(backup.entries);
 }
 export function createMoodStorage(
   adapter: StorageAdapter,
@@ -101,6 +130,7 @@ export function createMoodStorage(
     // coordinator, so other tabs/processes and corrupted storage remain visible.
     for (const entry of entries) {
       if (entry.activityIds) Object.freeze(entry.activityIds);
+      if (entry.voice) Object.freeze(entry.voice);
       Object.freeze(entry);
     }
     Object.freeze(entries);
@@ -153,21 +183,46 @@ export function createMoodStorage(
         const existing = await read();
         const current = existing.find((item) => item.id === entry.id);
         if (!current) throw new Error('这条记录已不存在，请重新打开。');
-        if (expected && JSON.stringify(current) !== JSON.stringify(validateEntries([expected])[0]))
+        if (expected && editSnapshot(current) !== editSnapshot(expected))
           throw new Error(
             '另一处刚刚修改了这条记录。你的输入仍在，请保留笔记并重新打开最新记录后再修改。',
           );
-        return persist(existing.map((item) => (item.id === entry.id ? entry : item)));
+        const next = { ...entry };
+        if (
+          next.voice &&
+          current.voice?.id === next.voice.id &&
+          current.voice.status !== 'pending'
+        ) {
+          next.voice = {
+            ...next.voice,
+            status: current.voice.status,
+            originalTranscript: current.voice.originalTranscript,
+            error: current.voice.error,
+            transcript: next.voice.edited ? next.voice.transcript : current.voice.transcript,
+          };
+        }
+        return persist(existing.map((item) => (item.id === entry.id ? next : item)));
+      }),
+    // Resolve against the latest snapshot under the same storage lock as edits,
+    // imports and deletes. Deleted/replaced attachments cannot be resurrected.
+    updateVoice: (id: string, update: (voice: VoiceRecording) => VoiceRecording) =>
+      mutate(async () => {
+        const existing = await read();
+        let changed = false;
+        const next = existing.map((entry) => {
+          if (entry.voice?.id !== id || !entry.voice.fileName) return entry;
+          const voice = validateVoice(update(entry.voice));
+          if (JSON.stringify(voice) === JSON.stringify(entry.voice)) return entry;
+          changed = true;
+          return { ...entry, voice };
+        });
+        return changed ? persist(next) : existing;
       }),
     remove: (id: string, expected?: MoodEntry) =>
       mutate(async () => {
         const existing = await read();
         const current = existing.find((item) => item.id === id);
-        if (
-          current &&
-          expected &&
-          JSON.stringify(current) !== JSON.stringify(validateEntries([expected])[0])
-        )
+        if (current && expected && editSnapshot(current) !== editSnapshot(expected))
           throw new Error('这条记录在另一处被修改了。请关闭并重新查看最新内容后再决定是否删除。');
         return persist(existing.filter((item) => item.id !== id));
       }),

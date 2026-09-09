@@ -27,6 +27,20 @@ export interface MoodEntry {
   timestamp: number; // Unix ms
   activityIds?: string[];
   updatedAt?: number;
+  voice?: VoiceRecording;
+}
+
+export interface VoiceRecording {
+  id: string;
+  /** Relative app-owned filename, never an arbitrary URL or absolute path. */
+  fileName?: string;
+  mimeType: 'audio/mp4' | 'audio/webm' | 'audio/ogg';
+  durationMs: number;
+  status: 'pending' | 'ready' | 'failed';
+  transcript?: string;
+  originalTranscript?: string;
+  error?: string;
+  edited?: boolean;
 }
 
 export type AppTab = 'today' | 'calendar' | 'insights' | 'settings';

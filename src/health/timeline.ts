@@ -1,3 +1,4 @@
+import { entryText } from '../voice/core';
 import {
   MOOD_HEALTH_APP_BUNDLE_IDENTIFIER,
   type StateOfMindSample,
@@ -136,7 +137,7 @@ export function filterTimeline(
     const mood = getEmotionById(record.emotionId)?.label ?? '';
     const haystack =
       record.type === 'local'
-        ? `本地 日记 ${mood} ${record.entry.note ?? ''} ${getActivityIds(record.entry)
+        ? `本地 日记 ${mood} ${entryText(record.entry)} ${getActivityIds(record.entry)
             .map((id) => getActivity(id)?.label ?? '')
             .join(' ')}`
         : `Apple 健康 心境 ${record.sample.sourceName} ${record.sample.sourceBundleId} ${record.kind === 'dailyMood' ? '一天整体心情' : '当下情绪'} ${mood} ${record.sample.valence}`;

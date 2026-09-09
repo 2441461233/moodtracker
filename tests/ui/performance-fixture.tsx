@@ -1,3 +1,4 @@
+import { failNextTranscription } from './voice-services';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,16 +11,22 @@ import {
   useMoodToast,
 } from '../../src/context/MoodContext';
 import { EntryComposer } from '../../src/components/EntryComposer';
+import { EntryDetail } from '../../src/components/EntryDetail';
+import { EntryList } from '../../src/components/EntryList';
 import { renders } from './performance-metrics';
 
 let actions: ReturnType<typeof useMoodActions>;
 function DataProbe() {
   renders.data++;
   const { entries, ready } = useMoodData();
+  const { openDetail } = useMoodActions();
   return (
-    <p>
-      状态：{ready ? '就绪' : '载入'} · 合成记录 {entries.length} 条
-    </p>
+    <>
+      <p>
+        状态：{ready ? '就绪' : '载入'} · 合成记录 {entries.length} 条
+      </p>
+      <EntryList entries={entries} onPress={openDetail} />
+    </>
   );
 }
 function ActionProbe() {
@@ -68,14 +75,15 @@ function ActionProbe() {
     <>
       <button onClick={() => void run()}>运行渲染回归</button>
       <button onClick={() => actions.openComposer({ emotionId: 'good' })}>打开输入性能测试</button>
+      <button onClick={failNextTranscription}>下次转写模拟失败</button>
       <p role="status">{result}</p>
     </>
   );
 }
 function OverlayProbe() {
   renders.overlays++;
-  const { composer } = useMoodOverlays();
-  return composer ? <EntryComposer /> : null;
+  const { composer, detail } = useMoodOverlays();
+  return composer ? <EntryComposer /> : detail ? <EntryDetail /> : null;
 }
 function ClockProbe() {
   renders.clock++;

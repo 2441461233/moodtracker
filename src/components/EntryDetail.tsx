@@ -1,14 +1,19 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useSyncExternalStore } from 'react';
 import { Platform, View } from 'react-native';
-import { useMoodOverlays, useMoodActions } from '../context/MoodContext';
+import { useMoodOverlays, useMoodActions, useMoodData } from '../context/MoodContext';
 import { getActivity, getActivityIds } from '../data/activities';
 import { formatDate, formatTime } from '../lib/dates';
 import { MOOD_APPEARANCE, useTheme } from '../theme';
 import { Button, Icon, Label, MoodIcon } from './ui';
 import { Sheet } from './Sheet';
+import { VoicePlayer } from './VoicePlayer';
+import { currentVoice, getVoiceJob, startVoiceJob, subscribeVoiceJobs } from '../voice/jobs';
+import { Disclosure } from './ui';
 
 export function EntryDetail() {
   const { detail } = useMoodOverlays();
+  const { entries } = useMoodData();
+  useSyncExternalStore(subscribeVoiceJobs, () => getVoiceJob(detail?.voice?.id));
   const { openDetail, openComposer, removeEntry } = useMoodActions();
   const theme = useTheme();
   const [confirm, setConfirm] = useState(false);
@@ -18,7 +23,8 @@ export function EntryDetail() {
   const [visible, setVisible] = useState(true);
   const editPending = useRef(false);
   if (!detail) return null;
-  const entry = detail;
+  const storedEntry = entries.find((item) => item.id === detail.id) ?? detail;
+  const entry = { ...storedEntry, voice: currentVoice(storedEntry.voice) };
   const edit = () => {
     if (editPending.current) return;
     editPending.current = true;
@@ -131,16 +137,62 @@ export function EntryDetail() {
           })}
         </View>
       )}
-      <View
-        style={{ backgroundColor: theme.subtle, borderRadius: 18, padding: 20, minHeight: 110 }}
-      >
-        <Label
-          selectable
-          style={{ fontSize: 14, lineHeight: 26, color: entry.note ? theme.text : theme.secondary }}
+      {entry.voice && (
+        <View style={{ gap: 12, marginBottom: 16 }}>
+          <Label muted style={{ fontSize: 12 }}>
+            AI 转写{entry.voice.edited ? ' · 已修改' : ''}
+          </Label>
+          {entry.voice.transcript ? (
+            <Label selectable style={{ fontSize: 16, lineHeight: 28 }}>
+              {entry.voice.transcript}
+            </Label>
+          ) : (
+            <Label muted style={{ fontSize: 13, lineHeight: 23 }}>
+              {entry.voice.status === 'pending'
+                ? '正在转写，完成后正文会显示在这里。'
+                : entry.voice.edited
+                  ? '已清空转写文字。'
+                  : entry.voice.fileName
+                    ? '尚未生成文字，原声仍可回听。'
+                    : '这段录音没有转写文字。'}
+            </Label>
+          )}
+          {!!entry.voice.error && (
+            <Label style={{ fontSize: 12, lineHeight: 21, color: theme.secondary }}>
+              {entry.voice.error}
+            </Label>
+          )}
+          {entry.voice.status === 'failed' && entry.voice.fileName && (
+            <Button kind="secondary" onPress={() => void startVoiceJob(entry.voice!)}>
+              重新转写
+            </Button>
+          )}
+          <VoicePlayer voice={entry.voice} />
+          {entry.voice.originalTranscript && (
+            <Disclosure title="查看识别原文">
+              <Label selectable muted style={{ fontSize: 13, lineHeight: 23 }}>
+                {entry.voice.originalTranscript}
+              </Label>
+            </Disclosure>
+          )}
+        </View>
+      )}
+      {(!entry.voice || entry.note) && (
+        <View
+          style={{ backgroundColor: theme.subtle, borderRadius: 18, padding: 20, minHeight: 110 }}
         >
-          {entry.note || '没有留下文字。光是记住此刻的感受，就已经很好。'}
-        </Label>
-      </View>
+          <Label
+            selectable
+            style={{
+              fontSize: 14,
+              lineHeight: 26,
+              color: entry.note ? theme.text : theme.secondary,
+            }}
+          >
+            {entry.note || '没有留下文字。光是记住此刻的感受，就已经很好。'}
+          </Label>
+        </View>
+      )}
       {entry.updatedAt && (
         <Label muted style={{ marginTop: 14, fontSize: 10 }}>
           最后编辑于 {formatDate(entry.updatedAt)} {formatTime(entry.updatedAt)}

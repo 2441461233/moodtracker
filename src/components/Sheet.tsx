@@ -48,7 +48,6 @@ export function Sheet({
   const reducedMotion = useReducedMotion();
   const internalScroll = useRef<ScrollView>(null);
   const scroll = scrollRef ?? internalScroll;
-  const keyboardVisible = useKeyboardVisible();
   const quickRecord = useContext(WidgetSheetContext);
   const [quickDismissing, setQuickDismissing] = useState(false);
   const latest = useRef({ visible, dismissDisabled, quickDismissing });
@@ -135,7 +134,10 @@ export function Sheet({
             borderColor: theme.cardBorder,
             overflow: 'hidden',
             boxShadow: '0 30px 80px rgba(0, 0, 0, 0.42)',
-            paddingBottom: compact ? (keyboardVisible ? 0 : Math.max(insets.bottom, 12)) : 0,
+            // Keep the sheet geometry stable. KeyboardAvoidingView is the single
+            // keyboard layout owner; removing this inset during keyboardWillShow
+            // caused a second independent layout jump while it was animating.
+            paddingBottom: compact ? Math.max(insets.bottom, 12) : 0,
           }}
         >
           {compact && (
@@ -163,11 +165,7 @@ export function Sheet({
             <Label accessibilityRole="header" style={{ fontSize: 16, fontWeight: '600', flex: 1 }}>
               {title}
             </Label>
-            {keyboardVisible && (
-              <Button kind="ghost" onPress={Keyboard.dismiss} style={{ paddingHorizontal: 10 }}>
-                收起键盘
-              </Button>
-            )}
+            <KeyboardDismissControl />
             <IconButton
               name="close"
               label="关闭弹窗"
@@ -179,6 +177,7 @@ export function Sheet({
             testID="sheet-scroll"
             ref={scroll}
             keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets={false}
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
@@ -210,5 +209,26 @@ export function Sheet({
         </View>
       </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+// Only this small control subscribes to keyboard notifications, rather than
+// rebuilding the sheet and all of its layout styles as the keyboard appears.
+function KeyboardDismissControl() {
+  const visible = useKeyboardVisible();
+  return (
+    <View
+      pointerEvents={visible ? 'auto' : 'none'}
+      aria-hidden={!visible}
+      accessibilityElementsHidden={!visible}
+      importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
+      style={{ width: 94, height: 44, opacity: visible ? 1 : 0 }}
+    >
+      {visible && (
+        <Button kind="ghost" onPress={Keyboard.dismiss} style={{ paddingHorizontal: 6 }}>
+          收起键盘
+        </Button>
+      )}
+    </View>
   );
 }

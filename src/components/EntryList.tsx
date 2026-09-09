@@ -5,6 +5,7 @@ import { getActivity, getActivityIds } from '../data/activities';
 import { MOOD_APPEARANCE, useTheme } from '../theme';
 import { formatDate, formatTime } from '../lib/dates';
 import { Icon, Label, MoodIcon } from './ui';
+import { entryText } from '../voice/core';
 
 export function EntryList({
   entries,
@@ -22,12 +23,19 @@ export function EntryList({
         .sort((a, b) => b.timestamp - a.timestamp)
         .map((entry) => {
           const mood = MOOD_APPEARANCE[entry.emotionId];
+          const text =
+            entryText(entry) ||
+            (entry.voice
+              ? entry.voice.status === 'pending'
+                ? '语音正在转写…'
+                : '语音记录 · 点开回放'
+              : '');
           const activities = getActivityIds(entry).map(getActivity).filter(Boolean);
           return (
             <Pressable
               key={entry.id}
               accessibilityRole="button"
-              accessibilityLabel={`${showDate ? formatDate(entry.timestamp) : ''} ${formatTime(entry.timestamp)}，${mood.label}，${entry.note || '查看记录'}`}
+              accessibilityLabel={`${showDate ? formatDate(entry.timestamp) : ''} ${formatTime(entry.timestamp)}，${mood.label}，${text || '查看记录'}`}
               onPress={() => onPress(entry)}
               style={({ pressed, hovered }) => ({
                 flexDirection: 'row',
@@ -74,9 +82,9 @@ export function EntryList({
                     {formatTime(entry.timestamp)}
                   </Label>
                 </View>
-                {entry.note ? (
+                {text ? (
                   <Label muted numberOfLines={2} style={{ fontSize: 13, lineHeight: 22 }}>
-                    {entry.note}
+                    {text}
                   </Label>
                 ) : null}
                 {activities.length > 0 && (
