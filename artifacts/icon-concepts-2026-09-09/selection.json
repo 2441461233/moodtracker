@@ -6,7 +6,7 @@
   "prompt": "grid-smile-refined/prompts/c.txt",
   "sourceSHA256": "ba05dc49c0942c0c9690e4f2256dcc127bd964057db19c033ea7d8ac2d328da5",
   "generation": "Built-in ImageGen, refined from nine-cell mosaic face",
-  "deployment": "GitHub Pages web icon update; native installed icons require a new signed build",
+  "deployment": "GitHub Pages published; user also authorized TestFlight update as 2.1.6",
   "assets": [
     {
       "path": "assets/app-icon.png",

@@ -327,7 +327,7 @@ export default function SettingsScreen() {
           </Label>
         </Disclosure>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
-          情绪像素 · 2.1.5
+          情绪像素 · 2.1.6
         </Label>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
           用于自我记录与觉察，不提供诊断或治疗，不能替代专业支持。
