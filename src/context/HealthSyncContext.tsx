@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type PropsWithChildren,
@@ -60,16 +61,14 @@ export function HealthSyncProvider({
     };
   }, []);
   useEffect(() => coordinator.current?.updateEntries(entries, ready), [entries, ready]);
-  return (
-    <HealthSyncContext.Provider
-      value={{
-        ...state,
-        enable: () => coordinator.current?.enable() ?? Promise.resolve(),
-        disable: () => coordinator.current?.disable() ?? Promise.resolve(),
-        retry: () => coordinator.current?.retry(),
-      }}
-    >
-      {children}
-    </HealthSyncContext.Provider>
+  const value = useMemo(
+    () => ({
+      ...state,
+      enable: () => coordinator.current?.enable() ?? Promise.resolve(),
+      disable: () => coordinator.current?.disable() ?? Promise.resolve(),
+      retry: () => coordinator.current?.retry(),
+    }),
+    [state],
   );
+  return <HealthSyncContext.Provider value={value}>{children}</HealthSyncContext.Provider>;
 }

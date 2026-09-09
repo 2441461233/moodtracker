@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, View } from 'react-native';
-import { useMood } from '../context/MoodContext';
+import { useMoodActions } from '../context/MoodContext';
 import { useTheme } from '../theme';
 import { Button, Icon, Label } from './ui';
 import { GlowOrb } from './effects';
 import { Sheet } from './Sheet';
 
 export function BreathingExercise() {
-  const { setBreathing } = useMood();
+  const { setBreathing } = useMoodActions();
   const theme = useTheme();
   const [running, setRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);

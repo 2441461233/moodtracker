@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { memo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native';
-import { useMood } from '../context/MoodContext';
+import { useMoodOverlays, useMoodActions } from '../context/MoodContext';
 import { EmotionId, MoodEntry } from '../types';
 import { ACTIVITIES, getActivityIds } from '../data/activities';
 import { dayKey, formatTime, parseEntryTime } from '../lib/dates';
@@ -11,7 +11,9 @@ import { Sheet } from './Sheet';
 import { EntryDateTimeFields } from './EntryDateTimeFields';
 
 export function EntryComposer() {
-  const { composer, closeComposer, persistEntry, feedback, now } = useMood();
+  const { composer } = useMoodOverlays();
+  const { closeComposer, persistEntry, feedback } = useMoodActions();
+  const now = useRef(new Date()).current;
   const theme = useTheme();
   const entry = composer?.entry;
   const initialDate = useRef(entry ? new Date(entry.timestamp) : (composer?.date ?? now)).current;
@@ -20,7 +22,7 @@ export function EntryComposer() {
     entry?.emotionId ?? composer?.emotionId,
   );
   const [activities, setActivities] = useState<string[]>(entry ? getActivityIds(entry) : []);
-  const [note, setNote] = useState(entry?.note ?? '');
+  const note = useRef(entry?.note ?? '');
   const [date, setDate] = useState(dayKey(initialDate));
   const [time, setTime] = useState(initialTime);
   const [step, setStep] = useState(entry ? 0 : composer?.emotionId ? 1 : 0);
@@ -57,7 +59,7 @@ export function EntryComposer() {
         id: id.current,
         emotionId: emotion,
         activityIds: activities,
-        note: note.trim() || undefined,
+        note: note.current.trim() || undefined,
         timestamp:
           entry && date === dayKey(entry.timestamp) && time === formatTime(entry.timestamp)
             ? entry.timestamp
@@ -81,21 +83,10 @@ export function EntryComposer() {
     '可能影响心情的事情，可多选或跳过。',
     '不必写得很好，真实就已经足够。',
   ];
-  const inputStyle = {
-    fontFamily: font,
-    backgroundColor: theme.subtle,
-    color: theme.text,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 14,
-    padding: 14,
-    fontSize: 16,
-    minHeight: 48,
-    minWidth: 0,
-  } as const;
   return (
     <Sheet
       preserveOnQuickRecord
+      stableHeight
       scrollKey={step}
       scrollRef={scroll}
       dismissDisabled={saving}
@@ -191,8 +182,10 @@ export function EntryComposer() {
                 accessibilityState={{ checked: active }}
                 disabled={saving}
                 onPress={() => {
-                  setEmotion(key);
-                  feedback();
+                  if (key !== emotion) {
+                    setEmotion(key);
+                    feedback();
+                  }
                 }}
                 style={({ pressed }) => ({
                   flexDirection: 'row',
@@ -236,7 +229,9 @@ export function EntryComposer() {
                   disabled={saving}
                   onPress={() => {
                     setActivities((prev) =>
-                      active ? prev.filter((item) => item !== activity.id) : [...prev, activity.id],
+                      prev.includes(activity.id)
+                        ? prev.filter((item) => item !== activity.id)
+                        : [...prev, activity.id],
                     );
                     feedback();
                   }}
@@ -302,24 +297,11 @@ export function EntryComposer() {
               </View>
             </View>
           )}
-          <View>
-            <TextInput
-              accessibilityLabel="心情笔记"
-              placeholder="愿意告诉我，刚刚发生了什么吗？"
-              placeholderTextColor={theme.muted}
-              multiline
-              editable={!saving}
-              keyboardAppearance={theme.dark ? 'dark' : 'light'}
-              textAlignVertical="top"
-              maxLength={Math.max(1000, entry?.note?.length ?? 0)}
-              value={note}
-              onChangeText={setNote}
-              style={[inputStyle, { minHeight: 145, lineHeight: 24 }]}
-            />
-            <Label muted style={{ fontSize: 10, marginTop: 6, textAlign: 'right' }}>
-              {note.length} / {Math.max(1000, entry?.note?.length ?? 0)} · 选填
-            </Label>
-          </View>
+          <NoteInput
+            draft={note}
+            maxLength={Math.max(1000, entry?.note?.length ?? 0)}
+            disabled={saving}
+          />
           <View style={{ gap: 8 }}>
             <Label muted style={{ fontSize: 12 }}>
               这个瞬间发生在
@@ -350,3 +332,51 @@ export function EntryComposer() {
     </Sheet>
   );
 }
+
+const NoteInput = memo(function NoteInput({
+  draft,
+  maxLength,
+  disabled,
+}: {
+  draft: React.RefObject<string>;
+  maxLength: number;
+  disabled: boolean;
+}) {
+  const theme = useTheme();
+  const [text, setText] = useState(draft.current);
+  const inputStyle = {
+    fontFamily: font,
+    backgroundColor: theme.subtle,
+    color: theme.text,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 14,
+    padding: 14,
+    fontSize: 16,
+    minHeight: 48,
+    minWidth: 0,
+  } as const;
+  return (
+    <View>
+      <TextInput
+        accessibilityLabel="心情笔记"
+        placeholder="愿意告诉我，刚刚发生了什么吗？"
+        placeholderTextColor={theme.muted}
+        multiline
+        editable={!disabled}
+        keyboardAppearance={theme.dark ? 'dark' : 'light'}
+        textAlignVertical="top"
+        maxLength={maxLength}
+        value={text}
+        onChangeText={(value) => {
+          draft.current = value;
+          setText(value);
+        }}
+        style={[inputStyle, { minHeight: 145, lineHeight: 24 }]}
+      />
+      <Label muted style={{ fontSize: 10, marginTop: 6, textAlign: 'right' }}>
+        {text.length} / {maxLength} · 选填
+      </Label>
+    </View>
+  );
+});

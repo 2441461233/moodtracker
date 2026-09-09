@@ -34,3 +34,13 @@ export function useRoute() {
   const fixture = useFixture();
   return { key: `fixture-${fixture.screen}`, name: fixture.screen, params: fixture.params };
 }
+
+export const useMoodData = useMood;
+export const useMoodActions = useMood;
+export const useMoodOverlays = useMood;
+export function useMoodClock() {
+  return useMood().now;
+}
+export function useMoodToast() {
+  return useMood().toast;
+}

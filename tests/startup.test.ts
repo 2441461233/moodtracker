@@ -29,6 +29,7 @@ function launch(platform = 'ios') {
     toast: null,
   };
   const react = {
+    memo: (component: unknown) => component,
     createElement(type: Element['type'], props: Element['props'] | null, ...children: Element[]) {
       return { type, props: { ...props, children } };
     },
@@ -54,7 +55,7 @@ function launch(platform = 'ios') {
       createBottomTabNavigator: () => ({ Navigator: 'Navigator', Screen: 'Screen' }),
     },
     'react-native-screens': { enableScreens: () => undefined },
-    './src/context/MoodContext': { useMood: () => mood },
+    './src/context/MoodContext': { useMoodData: () => mood, useMoodActions: () => mood },
     './src/theme': {
       useTheme: () => ({ dark: true, background: '#0B0D18' }),
       useLayout: () => ({ desktop: false }),

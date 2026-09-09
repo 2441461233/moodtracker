@@ -93,6 +93,21 @@ export function createMoodStorage(
   coordinate: StorageCoordinator = (operation) => operation(),
 ) {
   let queue: Promise<unknown> = Promise.resolve();
+  let cachedRaw: string | null | undefined;
+  let cachedEntries: MoodEntry[] = [];
+  function cache(raw: string | null, entries: MoodEntry[]) {
+    // A snapshot is immutable: callers cannot corrupt the next read through an
+    // object they received earlier. Always compare fresh adapter bytes under the
+    // coordinator, so other tabs/processes and corrupted storage remain visible.
+    for (const entry of entries) {
+      if (entry.activityIds) Object.freeze(entry.activityIds);
+      Object.freeze(entry);
+    }
+    Object.freeze(entries);
+    cachedRaw = raw;
+    cachedEntries = entries;
+    return entries;
+  }
   function mutate<T>(operation: () => Promise<T>): Promise<T> {
     const run = () => coordinate(operation);
     const result = queue.then(run, run);
@@ -101,9 +116,10 @@ export function createMoodStorage(
   }
   async function read(): Promise<MoodEntry[]> {
     const raw = await adapter.getItem(STORAGE_KEY);
-    if (raw === null) return [];
+    if (raw === cachedRaw) return cachedEntries;
+    if (raw === null) return cache(null, []);
     try {
-      return validateEntries(JSON.parse(raw));
+      return cache(raw, validateEntries(JSON.parse(raw)));
     } catch {
       throw new Error(
         '本地记录暂时无法读取。原始数据已保留，请先导出原始备份，不要清除浏览器数据。',
@@ -117,7 +133,7 @@ export function createMoodStorage(
     if (utf8Bytes(serialized) > MAX_BACKUP_BYTES - 1024)
       throw new Error('记录已接近 10 MB 的本地容量上限。请先导出备份，再整理不需要的记录。');
     await adapter.setItem(STORAGE_KEY, serialized);
-    return validated;
+    return cache(serialized, validated);
   }
   return {
     read: async () => {

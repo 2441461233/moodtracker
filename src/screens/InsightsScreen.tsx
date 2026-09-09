@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { useMood } from '../context/MoodContext';
+import { useMoodData, useMoodClock, useMoodActions } from '../context/MoodContext';
 import { Page } from '../components/Page';
 import {
   Button,
@@ -45,7 +45,9 @@ function getRange(period: Period, offset: number, now: Date): [Date, Date] {
 }
 
 export default function InsightsScreen() {
-  const { entries, now, openComposer } = useMood();
+  const { entries } = useMoodData();
+  const now = useMoodClock();
+  const { openComposer } = useMoodActions();
   const { records, health } = useTimeline();
   const theme = useTheme();
   const { desktop, compact } = useLayout();
@@ -58,22 +60,30 @@ export default function InsightsScreen() {
     () => entriesInRange(entries, start, end),
     [entries, start.getTime(), end.getTime()],
   );
-  const previous = entriesInRange(entries, previousStart, previousEnd);
-  const days = groupByDay(periodEntries).size;
-  const average = dailyAverage(periodEntries);
-  const previousAverage = dailyAverage(previous);
+  const previous = useMemo(
+    () => entriesInRange(entries, previousStart, previousEnd),
+    [entries, previousStart.getTime(), previousEnd.getTime()],
+  );
+  const days = useMemo(() => groupByDay(periodEntries).size, [periodEntries]);
+  const average = useMemo(() => dailyAverage(periodEntries), [periodEntries]);
+  const previousAverage = useMemo(() => dailyAverage(previous), [previous]);
+  const previousDays = useMemo(() => groupByDay(previous).size, [previous]);
   const difference =
-    days >= 3 && groupByDay(previous).size >= 3 && average !== null && previousAverage !== null
+    days >= 3 && previousDays >= 3 && average !== null && previousAverage !== null
       ? average - previousAverage
       : null;
-  const factors = activityInsights(periodEntries);
+  const factors = useMemo(() => activityInsights(periodEntries), [periodEntries]);
   const averageEmotion = average === null ? null : emotionForScore(average);
-  const counts = periodEntries.reduce(
-    (result, entry) => {
-      result[entry.emotionId] = (result[entry.emotionId] ?? 0) + 1;
-      return result;
-    },
-    {} as Record<string, number>,
+  const counts = useMemo(
+    () =>
+      periodEntries.reduce(
+        (result, entry) => {
+          result[entry.emotionId] = (result[entry.emotionId] ?? 0) + 1;
+          return result;
+        },
+        {} as Record<string, number>,
+      ),
+    [periodEntries],
   );
   const rangeTitle =
     offset === 0

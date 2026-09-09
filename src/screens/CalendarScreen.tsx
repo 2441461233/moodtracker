@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Keyboard, Pressable, TextInput, View } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { useMood } from '../context/MoodContext';
+import { useMoodClock, useMoodActions } from '../context/MoodContext';
 import { Page } from '../components/Page';
 import {
   Button,
@@ -38,7 +38,8 @@ import { font, MOOD_APPEARANCE, useLayout, useTheme } from '../theme';
 import { EmotionId } from '../types';
 
 export default function CalendarScreen() {
-  const { now, openComposer, openDetail } = useMood();
+  const now = useMoodClock();
+  const { openComposer, openDetail } = useMoodActions();
   const { records, health } = useTimeline();
   const theme = useTheme();
   const { desktop, compact } = useLayout();
@@ -72,21 +73,29 @@ export default function CalendarScreen() {
       }
     }
   }, [requestedDate, widgetParams?.widgetRequest]);
-  const monthEntries = timelineInRange(
-    sourceRecords,
-    mode === 'year' ? new Date(month.getFullYear(), 0, 1) : month,
-    mode === 'year'
-      ? new Date(month.getFullYear() + 1, 0, 1)
-      : new Date(month.getFullYear(), month.getMonth() + 1, 1),
+  const monthEntries = useMemo(
+    () =>
+      timelineInRange(
+        sourceRecords,
+        mode === 'year' ? new Date(month.getFullYear(), 0, 1) : month,
+        mode === 'year'
+          ? new Date(month.getFullYear() + 1, 0, 1)
+          : new Date(month.getFullYear(), month.getMonth() + 1, 1),
+      ),
+    [sourceRecords, mode, month],
   );
-  const average = timelineDailyAverage(monthEntries);
-  const monthGroups = groupTimelineByDay(monthEntries);
-  const search = query.trim();
-  const filtered = filterTimeline(sourceRecords, {
-    emotionId: filter,
-    query: search || undefined,
-    day: view === 'calendar' && !search ? selected : undefined,
-  });
+  const average = useMemo(() => timelineDailyAverage(monthEntries), [monthEntries]);
+  const monthGroups = useMemo(() => groupTimelineByDay(monthEntries), [monthEntries]);
+  const search = useDeferredValue(query.trim());
+  const filtered = useMemo(
+    () =>
+      filterTimeline(sourceRecords, {
+        emotionId: filter,
+        query: search || undefined,
+        day: view === 'calendar' && !search ? selected : undefined,
+      }),
+    [sourceRecords, filter, search, view, selected],
+  );
   const showingDay = view === 'calendar' && !search;
   const activeFilterCount = Number(source !== 'all') + Number(filter !== 'all') + Number(!!search);
   const clearFilters = () => {

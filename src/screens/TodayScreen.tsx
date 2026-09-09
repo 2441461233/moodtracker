@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
-import { useMood } from '../context/MoodContext';
+import { useMoodData, useMoodClock, useMoodActions } from '../context/MoodContext';
 import { useTimeline } from '../health/useTimeline';
 import {
   groupTimelineByDay,
@@ -20,7 +20,9 @@ import { MOOD_APPEARANCE, useLayout, useTheme } from '../theme';
 import { EmotionId } from '../types';
 
 export default function TodayScreen() {
-  const { entries, settings, now, openComposer, openDetail, setBreathing } = useMood();
+  const { entries, settings } = useMoodData();
+  const now = useMoodClock();
+  const { openComposer, openDetail, setBreathing } = useMoodActions();
   const { records, health } = useTimeline();
   const theme = useTheme();
   const { desktop, compact, width } = useLayout();
@@ -30,14 +32,20 @@ export default function TodayScreen() {
   const weekStart = startOfWeek(now);
   const weekKey = dayKey(weekStart);
   useEffect(() => setSelected(null), [weekKey]);
-  const weekRecords = timelineInRange(records, weekStart, addDays(weekStart, 7));
-  const weekGroups = groupTimelineByDay(weekRecords);
-  const selectedRecords = records.filter((record) => dayKey(record.timestamp) === selectedKey);
+  const weekRecords = useMemo(
+    () => timelineInRange(records, weekStart, addDays(weekStart, 7)),
+    [records, weekKey],
+  );
+  const weekGroups = useMemo(() => groupTimelineByDay(weekRecords), [weekRecords]);
+  const selectedRecords = useMemo(
+    () => records.filter((record) => dayKey(record.timestamp) === selectedKey),
+    [records, selectedKey],
+  );
   const selectedAppleCount = selectedRecords.filter((record) => record.type === 'apple').length;
   const weekAppleCount = weekRecords.filter((record) => record.type === 'apple').length;
-  const average = timelineDailyAverage(weekRecords);
+  const average = useMemo(() => timelineDailyAverage(weekRecords), [weekRecords]);
   const averageEmotion = average === null ? null : emotionForScore(average);
-  const streak = currentStreak(entries, now);
+  const streak = useMemo(() => currentStreak(entries, now), [entries, dayKey(now)]);
   const ids = Object.keys(MOOD_APPEARANCE) as EmotionId[];
   return (
     <Page
@@ -158,7 +166,7 @@ export default function TodayScreen() {
                 const active = key === selectedKey;
                 const dayRecords = weekGroups.get(key) ?? [];
                 const future = key > dayKey(now);
-                const last = [...dayRecords].sort((a, b) => b.timestamp - a.timestamp)[0];
+                const last = dayRecords[0];
                 const dayMood = health.enabled
                   ? emotionForScore(timelineDayScore(dayRecords))
                   : (last?.emotionId ?? null);
@@ -193,7 +201,11 @@ export default function TodayScreen() {
                     )}
                     <Label
                       style={{
-                        color: active ? (theme.dark ? '#DCD6FF' : 'rgba(255,255,255,0.85)') : theme.secondary,
+                        color: active
+                          ? theme.dark
+                            ? '#DCD6FF'
+                            : 'rgba(255,255,255,0.85)'
+                          : theme.secondary,
                         fontSize: 11,
                       }}
                     >
@@ -327,7 +339,7 @@ export default function TodayScreen() {
             <View style={{ flexDirection: 'row', gap: 6, marginBottom: 17 }}>
               {Array.from({ length: 7 }, (_, index) => {
                 const dayRecords = weekGroups.get(dayKey(addDays(weekStart, index))) ?? [];
-                const last = [...dayRecords].sort((a, b) => b.timestamp - a.timestamp)[0];
+                const last = dayRecords[0];
                 const dayMood = health.enabled
                   ? emotionForScore(timelineDayScore(dayRecords))
                   : (last?.emotionId ?? null);

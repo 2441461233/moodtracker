@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
 import { Button, Label } from './ui';
 import { FadeIn } from './effects';
-import { useMood } from '../context/MoodContext';
+import { useMoodActions } from '../context/MoodContext';
 import { useKeyboardVisible } from '../lib/useKeyboardVisible';
 
 export function Page({
@@ -24,7 +24,7 @@ export function Page({
   const { desktop, compact, width } = useLayout();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { openComposer } = useMood();
+  const { openComposer } = useMoodActions();
   const keyboardVisible = useKeyboardVisible();
   const scroll = useRef<ScrollView>(null);
   useEffect(() => {

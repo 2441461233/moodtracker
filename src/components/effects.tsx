@@ -1,5 +1,14 @@
 import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, View, ViewStyle } from 'react-native';
+import {
+  AccessibilityInfo,
+  Animated,
+  AppState,
+  Easing,
+  Platform,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from 'react-native';
 import Svg, {
   Circle as SvgCircle,
   Defs,
@@ -52,22 +61,9 @@ export function Gradient({
   borderRadius?: number;
 }>) {
   const id = useGradientId();
-  const [size, setSize] = useState({ width: 1, height: 1 });
   return (
-    <View
-      style={[style, { borderRadius, overflow: 'hidden' }]}
-      onLayout={(event) =>
-        setSize({
-          width: Math.max(event.nativeEvent.layout.width, 1),
-          height: Math.max(event.nativeEvent.layout.height, 1),
-        })
-      }
-    >
-      <Svg
-        width={size.width}
-        height={size.height}
-        style={{ position: 'absolute', top: 0, left: 0 }}
-      >
+    <View style={[style, { borderRadius, overflow: 'hidden' }]}>
+      <Svg width="100%" height="100%" pointerEvents="none" style={StyleSheet.absoluteFill}>
         <Defs>
           <SvgLinearGradient id={id} x1={start.x} y1={start.y} x2={end.x} y2={end.y}>
             {colors.map((color, index) => (
@@ -79,7 +75,7 @@ export function Gradient({
             ))}
           </SvgLinearGradient>
         </Defs>
-        <Rect x={0} y={0} width={size.width} height={size.height} fill={`url(#${id})`} />
+        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
       </Svg>
       {children}
     </View>
@@ -141,12 +137,14 @@ function AmbientOrb({
           duration,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: Platform.OS !== 'web',
+          isInteraction: false,
         }),
         Animated.timing(progress, {
           toValue: 0,
           duration,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: Platform.OS !== 'web',
+          isInteraction: false,
         }),
       ]),
     );
@@ -180,12 +178,22 @@ function AmbientOrb({
 }
 
 /** 页面级氛围背景：缓慢呼吸的“情绪极光”。 */
-export function AmbientBackground() {
+export function AmbientBackground({ paused = false }: { paused?: boolean }) {
   const theme = useTheme();
   const reduced = useReducedMotion();
+  const [active, setActive] = useState(AppState.currentState === 'active');
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) =>
+      setActive(state === 'active'),
+    );
+    return () => subscription.remove();
+  }, []);
   if (!theme.dark) {
     return (
-      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
         <GlowOrb
           color="#B9B2F2"
           size={560}
@@ -202,14 +210,17 @@ export function AmbientBackground() {
     );
   }
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+    >
       <AmbientOrb
         color="#5A4BD1"
         size={620}
         origin={{ top: -170, left: -110 }}
         drift={{ x: 34, y: 26 }}
         duration={9000}
-        reduced={reduced}
+        reduced={reduced || paused || !active}
       />
       <AmbientOrb
         color="#2C6E5D"
@@ -217,7 +228,7 @@ export function AmbientBackground() {
         origin={{ top: 200, right: -150 }}
         drift={{ x: 30, y: 40 }}
         duration={11000}
-        reduced={reduced}
+        reduced={reduced || paused || !active}
       />
       <AmbientOrb
         color="#7A4A78"
@@ -225,7 +236,7 @@ export function AmbientBackground() {
         origin={{ top: 520, left: 30 }}
         drift={{ x: 26, y: 30 }}
         duration={13000}
-        reduced={reduced}
+        reduced={reduced || paused || !active}
       />
     </View>
   );

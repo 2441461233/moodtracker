@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -10,7 +10,13 @@ import TodayScreen from './src/screens/TodayScreen';
 import InsightsScreen from './src/screens/InsightsScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import { MoodProvider, useMood } from './src/context/MoodContext';
+import {
+  MoodProvider,
+  useMoodData,
+  useMoodActions,
+  useMoodOverlays,
+  useMoodToast,
+} from './src/context/MoodContext';
 import { useTheme, useLayout } from './src/theme';
 import { Navigation } from './src/components/Navigation';
 import { AmbientBackground } from './src/components/effects';
@@ -53,9 +59,7 @@ export default function App() {
 
 function AppContent() {
   const theme = useTheme();
-  const { desktop } = useLayout();
-  const { composer, detail, breathing, ready, toast, storageError } = useMood();
-  const dark = theme.dark;
+  const { ready, storageError } = useMoodData();
   // Native keeps the system splash here, so saved appearance is applied before it disappears.
   if (!ready && Platform.OS !== 'web') return null;
   if (!ready)
@@ -76,57 +80,92 @@ function AppContent() {
   if (storageError) return <RecoveryScreen message={storageError} />;
   return (
     <View onLayout={hideNativeSplash} style={{ flex: 1, backgroundColor: theme.background }}>
-      <AmbientBackground />
-      <NavigationContainer
-        ref={navigationRef}
-        theme={{
-          ...(dark ? DarkTheme : DefaultTheme),
-          colors: {
-            ...(dark ? DarkTheme : DefaultTheme).colors,
-            background: theme.background,
-            card: theme.surface,
-            text: theme.text,
-            primary: theme.accent,
-            border: theme.border,
-          },
+      <AppBackground />
+      <AppNavigator />
+      <AppOverlays />
+      <Toast />
+    </View>
+  );
+}
+
+const AppNavigator = memo(function AppNavigator() {
+  const theme = useTheme();
+  const { desktop } = useLayout();
+  const dark = theme.dark;
+  return (
+    <NavigationContainer
+      ref={navigationRef}
+      theme={{
+        ...(dark ? DarkTheme : DefaultTheme),
+        colors: {
+          ...(dark ? DarkTheme : DefaultTheme).colors,
+          background: theme.background,
+          card: theme.surface,
+          text: theme.text,
+          primary: theme.accent,
+          border: theme.border,
+        },
+      }}
+    >
+      <StatusBar style={dark ? 'light' : 'dark'} />
+      <Tab.Navigator
+        detachInactiveScreens
+        tabBar={(props) => <Navigation {...props} />}
+        screenOptions={{
+          headerShown: false,
+          freezeOnBlur: Platform.OS !== 'web',
+          tabBarPosition: desktop ? 'left' : 'bottom',
+          animation: 'none',
+          sceneStyle: { backgroundColor: 'transparent' },
         }}
       >
-        <StatusBar style={dark ? 'light' : 'dark'} />
-        <Tab.Navigator
-          detachInactiveScreens
-          tabBar={(props) => <Navigation {...props} />}
-          screenOptions={{
-            headerShown: false,
-            tabBarPosition: desktop ? 'left' : 'bottom',
-            animation: 'none',
-            sceneStyle: { backgroundColor: 'transparent' },
-          }}
-        >
-          <Tab.Screen
-            name="today"
-            component={TodayScreen}
-            options={{ title: '今日心情 · 情绪像素' }}
-          />
-          <Tab.Screen
-            name="calendar"
-            component={CalendarScreen}
-            options={{ title: '情绪记录 · 情绪像素' }}
-          />
-          <Tab.Screen
-            name="insights"
-            component={InsightsScreen}
-            options={{ title: '情绪洞察 · 情绪像素' }}
-          />
-          <Tab.Screen
-            name="settings"
-            component={SettingsScreen}
-            options={{ title: '我的空间 · 情绪像素' }}
-          />
-        </Tab.Navigator>
-      </NavigationContainer>
+        <Tab.Screen
+          name="today"
+          component={TodayScreen}
+          options={{ title: '今日心情 · 情绪像素' }}
+        />
+        <Tab.Screen
+          name="calendar"
+          component={CalendarScreen}
+          options={{ title: '情绪记录 · 情绪像素' }}
+        />
+        <Tab.Screen
+          name="insights"
+          component={InsightsScreen}
+          options={{ title: '情绪洞察 · 情绪像素' }}
+        />
+        <Tab.Screen
+          name="settings"
+          component={SettingsScreen}
+          options={{ title: '我的空间 · 情绪像素' }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+});
+
+const AppBackground = memo(function AppBackground() {
+  const { composer, detail, breathing } = useMoodOverlays();
+  return <AmbientBackground paused={!!composer || !!detail || breathing} />;
+});
+
+const AppOverlays = memo(function AppOverlays() {
+  const { composer, detail, breathing } = useMoodOverlays();
+  return (
+    <>
       {composer && <EntryComposer />}
       {detail && <EntryDetail />}
       {breathing && <BreathingExercise />}
+    </>
+  );
+});
+
+const Toast = memo(function Toast() {
+  const toast = useMoodToast();
+  const theme = useTheme();
+  const { desktop } = useLayout();
+  return (
+    <>
       {toast && (
         <View
           pointerEvents="none"
@@ -149,13 +188,13 @@ function AppContent() {
           <Label style={{ color: theme.surface, fontSize: 12, flexShrink: 1 }}>{toast}</Label>
         </View>
       )}
-    </View>
+    </>
   );
-}
+});
 
 function RecoveryScreen({ message }: { message: string }) {
   const theme = useTheme();
-  const { reload } = useMood();
+  const { reload } = useMoodActions();
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const recover = async () => {

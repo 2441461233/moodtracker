@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Keyboard, Platform, Switch, TextInput, View } from 'react-native';
-import { useMood } from '../context/MoodContext';
+import { useMoodData, useMoodActions } from '../context/MoodContext';
 import { Page } from '../components/Page';
 import { Button, Card, Disclosure, Icon, Label, SectionTitle, Segment } from '../components/ui';
 import { Gradient } from '../components/effects';
@@ -15,7 +15,8 @@ import { dayKey } from '../lib/dates';
 import { groupByDay } from '../lib/insights';
 
 export default function SettingsScreen() {
-  const { settings, entries, updateSettings, importEntries, notify } = useMood();
+  const { settings, entries } = useMoodData();
+  const { updateSettings, importEntries, notify } = useMoodActions();
   const theme = useTheme();
   const { desktop } = useLayout();
   const [name, setName] = useState(settings.name);
@@ -327,7 +328,7 @@ export default function SettingsScreen() {
           </Label>
         </Disclosure>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
-          情绪像素 · 2.1.7
+          情绪像素 · 2.1.8
         </Label>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
           用于自我记录与觉察，不提供诊断或治疗，不能替代专业支持。

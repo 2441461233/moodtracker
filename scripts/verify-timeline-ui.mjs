@@ -10,10 +10,20 @@ const fixture = join(project, 'tests/ui');
 const output = await mkdtemp(join(tmpdir(), 'moodtracker-timeline-ui-'));
 const contextMock = join(fixture, 'fixture-context.tsx');
 const interactions = process.argv.includes('--interactions');
+const performance = process.argv.includes('--performance');
 
 const result = await build({
   absWorkingDir: project,
-  entryPoints: [join(fixture, interactions ? 'interaction-fixture.tsx' : 'timeline-fixture.tsx')],
+  entryPoints: [
+    join(
+      fixture,
+      performance
+        ? 'performance-fixture.tsx'
+        : interactions
+          ? 'interaction-fixture.tsx'
+          : 'timeline-fixture.tsx',
+    ),
+  ],
   outfile: join(output, 'app.js'),
   bundle: true,
   metafile: true,
@@ -38,9 +48,30 @@ const result = await build({
     {
       name: 'isolated-health-ui-fixture',
       setup(builder) {
+        if (performance) {
+          const services = join(fixture, 'performance-services.tsx');
+          builder.onResolve(
+            {
+              filter:
+                /(?:^|\/)context\/HealthSyncContext$|^\.\/HealthSyncContext$|^\.\.\/storage$|^expo-haptics$/,
+            },
+            () => ({ path: services }),
+          );
+          builder.onLoad({ filter: /EntryComposer\.tsx$/ }, async (args) => ({
+            contents:
+              `import { countComposerRender } from ${JSON.stringify(join(fixture, 'performance-metrics.ts'))};\n` +
+              (await readFile(args.path, 'utf8')).replace(
+                'export function EntryComposer() {',
+                'export function EntryComposer() { countComposerRender();',
+              ),
+            loader: 'tsx',
+            resolveDir: dirname(args.path),
+          }));
+        }
         builder.onResolve(
           { filter: /(?:^|\/)context\/(?:MoodContext|HealthSyncContext)$/ },
-          () => ({ path: contextMock }),
+          (args) =>
+            performance && args.path.endsWith('MoodContext') ? undefined : { path: contextMock },
         );
         builder.onResolve({ filter: /^@react-navigation\/native$/ }, () => ({ path: contextMock }));
         builder.onResolve({ filter: /^react-native$/ }, () => ({
@@ -71,8 +102,10 @@ const forbiddenInputs = Object.keys(result.metafile.inputs).filter((path) =>
     path,
   ),
 );
-if (forbiddenInputs.length)
-  throw new Error(`Fixture isolation failed: ${forbiddenInputs.join(', ')}`);
+const unsafeInputs = performance
+  ? forbiddenInputs.filter((path) => !path.endsWith('context/MoodContext.tsx'))
+  : forbiddenInputs;
+if (unsafeInputs.length) throw new Error(`Fixture isolation failed: ${unsafeInputs.join(', ')}`);
 
 const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>MoodTracker 隔离 UI 测试 · 合成样本</title><style>
 html,body,#fixture-root{height:100%;margin:0}body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:#f7f8fc}.fixture-shell{height:100%;display:flex;flex-direction:column}.fixture-controls{padding:12px 18px;background:#fff8df;border-bottom:2px solid #c9a440;color:#403713;font-size:12px;line-height:1.5;display:flex;flex-direction:column;gap:7px;flex-shrink:0}.fixture-controls strong{font-size:14px}.fixture-controls small{color:#6f6042}.fixture-buttons{display:flex;flex-wrap:wrap;gap:7px}.fixture-buttons button{font:inherit;background:white;border:1px solid #d5c8a2;border-radius:7px;padding:6px 10px;cursor:pointer}.fixture-buttons button[aria-pressed=true]{background:#413761;color:white;border-color:#413761}.fixture-screen{display:flex;flex:1;min-height:0}.fixture-screen>div{flex:1;min-height:0}.fixture-controls details p{margin:5px 0;max-width:1000px}button:focus-visible{outline:3px solid #6c63df;outline-offset:2px}
@@ -126,7 +159,7 @@ server.listen(0, '127.0.0.1', () => {
   console.log(`ISOLATED_UI_URL=http://127.0.0.1:${address.port}/`);
   console.log(`ISOLATED_UI_OUTPUT=${output}`);
   console.log(
-    `ISOLATION_CHECK=passed (${Object.keys(result.metafile.inputs).length} inputs; no production health/store bindings or context; pure storage validators allowed)`,
+    `ISOLATION_CHECK=passed (${Object.keys(result.metafile.inputs).length} inputs; no production health/store bindings; performance mode uses real MoodProvider with memory-only services)`,
   );
   console.log(
     'Synthetic UI only. Not a native HealthKit or device test. Ctrl-C stops the loopback server.',

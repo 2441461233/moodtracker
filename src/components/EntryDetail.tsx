@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { useMood } from '../context/MoodContext';
+import { useMoodOverlays, useMoodActions } from '../context/MoodContext';
 import { getActivity, getActivityIds } from '../data/activities';
 import { formatDate, formatTime } from '../lib/dates';
 import { MOOD_APPEARANCE, useTheme } from '../theme';
@@ -8,7 +8,8 @@ import { Button, Icon, Label, MoodIcon } from './ui';
 import { Sheet } from './Sheet';
 
 export function EntryDetail() {
-  const { detail, openDetail, openComposer, removeEntry } = useMood();
+  const { detail } = useMoodOverlays();
+  const { openDetail, openComposer, removeEntry } = useMoodActions();
   const theme = useTheme();
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);

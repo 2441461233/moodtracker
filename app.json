@@ -2,7 +2,7 @@
   "expo": {
     "name": "情绪像素",
     "slug": "moodtracker",
-    "version": "2.1.7",
+    "version": "2.1.8",
     "description": "一个只属于你的心情空间。记录感受、回看日历、发现生活与情绪的小关联。",
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",

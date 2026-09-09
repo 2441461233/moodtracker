@@ -3,7 +3,7 @@ import { Image, Keyboard, Pressable, View } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
-import { useMood } from '../context/MoodContext';
+import { useMoodData, useMoodActions } from '../context/MoodContext';
 import { Button, Icon, Label } from './ui';
 import { Gradient } from './effects';
 import { useKeyboardVisible } from '../lib/useKeyboardVisible';
@@ -17,7 +17,8 @@ const items: Record<string, { label: string; icon: string; short: string }> = {
 export function Navigation({ state, navigation, descriptors }: BottomTabBarProps) {
   const theme = useTheme();
   const { desktop, height, width } = useLayout();
-  const { settings, openComposer, feedback } = useMood();
+  const { settings } = useMoodData();
+  const { openComposer, feedback } = useMoodActions();
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
   if (!desktop && keyboardVisible) return null;

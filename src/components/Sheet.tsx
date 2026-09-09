@@ -1,17 +1,17 @@
-import React, { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
-import {
-  AccessibilityInfo,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  View,
-} from 'react-native';
+import React, {
+  PropsWithChildren,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
 import { Button, IconButton, Label } from './ui';
 import { useKeyboardVisible } from '../lib/useKeyboardVisible';
+import { useReducedMotion } from './effects';
 import { WidgetSheetContext } from '../context/WidgetSheetContext';
 
 export function Sheet({
@@ -20,6 +20,7 @@ export function Sheet({
   onClose,
   footer,
   wide = false,
+  stableHeight = false,
   scrollKey,
   scrollRef,
   visible = true,
@@ -32,6 +33,7 @@ export function Sheet({
   onClose: () => void;
   footer?: React.ReactNode;
   wide?: boolean;
+  stableHeight?: boolean;
   scrollKey?: string | number;
   scrollRef?: React.RefObject<ScrollView | null>;
   visible?: boolean;
@@ -43,7 +45,7 @@ export function Sheet({
   const theme = useTheme();
   const { compact, height } = useLayout();
   const insets = useSafeAreaInsets();
-  const [reducedMotion, setReducedMotion] = useState(true);
+  const reducedMotion = useReducedMotion();
   const internalScroll = useRef<ScrollView>(null);
   const scroll = scrollRef ?? internalScroll;
   const keyboardVisible = useKeyboardVisible();
@@ -71,18 +73,10 @@ export function Sheet({
     Keyboard.dismiss();
     onClose();
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     Keyboard.dismiss();
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [scrollKey]);
-  useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setReducedMotion);
-    const subscription = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      setReducedMotion,
-    );
-    return () => subscription.remove();
-  }, []);
   // RN Web Modal owns focus trapping/restoration and topmost-only Escape handling.
   return (
     <Modal
@@ -122,6 +116,12 @@ export function Sheet({
           style={{
             width: '100%',
             maxWidth: wide ? 700 : 550,
+            height: stableHeight
+              ? Math.min(
+                  760,
+                  height - Math.max(insets.top, 18) - (compact ? 0 : Math.max(insets.bottom, 24)),
+                )
+              : undefined,
             maxHeight:
               height -
               Math.max(insets.top, compact ? 18 : 24) -
@@ -185,7 +185,7 @@ export function Sheet({
               paddingTop: 8,
               paddingBottom: 24,
             }}
-            style={{ flexShrink: 1 }}
+            style={{ flexShrink: 1, flexGrow: stableHeight ? 1 : 0 }}
           >
             <View
               pointerEvents={contentDisabled ? 'none' : 'auto'}

@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useEffect, useMemo, useRef } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
-import { useMood } from './MoodContext';
+import { useMoodData, useMoodClock, useMoodActions } from './MoodContext';
 import { navigationRef } from '../lib/navigation';
 import { dayKey } from '../lib/dates';
 import { makeWidgetCalendarSnapshot } from '../lib/widget-calendar';
@@ -9,7 +9,7 @@ import { WidgetSheetContext } from './WidgetSheetContext';
 import { createQuickRecordController, subscribeToQuickRecordLinks } from '../lib/quick-record';
 
 export function QuickRecordProvider({ children }: PropsWithChildren) {
-  const mood = useMood();
+  const mood = { ...useMoodData(), ...useMoodActions(), now: useMoodClock() };
   const latest = useRef(mood);
   latest.current = mood;
   const [controller] = React.useState(() =>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { View } from 'react-native';
 import type { MoodEntry } from '../types';
 import type { TimelineRecord } from '../health/timeline';
@@ -7,7 +7,7 @@ import { HealthRecordRow } from './HealthRecordRow';
 import { Button, Label } from './ui';
 import { dayKey, formatDate } from '../lib/dates';
 
-export function TimelineList({
+export const TimelineList = memo(function TimelineList({
   records,
   onPressLocal,
   showDate = false,
@@ -62,4 +62,4 @@ export function TimelineList({
       )}
     </View>
   );
-}
+});

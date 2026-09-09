@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -42,11 +43,44 @@ interface MoodContextValue {
   reload: () => Promise<void>;
   feedback: (success?: boolean) => void;
 }
-const MoodContext = createContext<MoodContextValue | null>(null);
-export function useMood() {
-  const value = useContext(MoodContext);
-  if (!value) throw new Error('MoodProvider is required');
+type MoodData = Pick<MoodContextValue, 'entries' | 'settings' | 'ready' | 'storageError'>;
+type MoodOverlays = Pick<MoodContextValue, 'composer' | 'detail' | 'breathing'>;
+type MoodActions = Omit<MoodContextValue, keyof MoodData | keyof MoodOverlays | 'now' | 'toast'>;
+const DataContext = createContext<MoodData | null>(null);
+const ActionsContext = createContext<MoodActions | null>(null);
+const OverlaysContext = createContext<MoodOverlays | null>(null);
+const ClockContext = createContext<Date | null>(null);
+const ToastContext = createContext<string | null>(null);
+function required<T>(value: T | null): T {
+  if (value === null) throw new Error('MoodProvider is required');
   return value;
+}
+// Subscribe only to the state a component renders. Opening a sheet or announcing a
+// toast must not invalidate the journal, charts, navigation or health snapshot.
+export function useMoodData() {
+  return required(useContext(DataContext));
+}
+export function useMoodActions() {
+  return required(useContext(ActionsContext));
+}
+export function useMoodOverlays() {
+  return required(useContext(OverlaysContext));
+}
+export function useMoodClock() {
+  return required(useContext(ClockContext));
+}
+export function useMoodToast() {
+  return useContext(ToastContext);
+}
+/** Compatibility hook for isolated fixtures; app components use scoped subscriptions. */
+export function useMood(): MoodContextValue {
+  return {
+    ...useMoodData(),
+    ...useMoodActions(),
+    ...useMoodOverlays(),
+    now: useMoodClock(),
+    toast: useMoodToast(),
+  };
 }
 
 export function MoodProvider({ children }: PropsWithChildren) {
@@ -60,6 +94,8 @@ export function MoodProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const composerRef = useRef(composer);
+  composerRef.current = composer;
   const systemScheme = useColorScheme();
   const isDark =
     settings.theme === 'dark' || (settings.theme === 'system' && systemScheme === 'dark');
@@ -73,7 +109,13 @@ export function MoodProvider({ children }: PropsWithChildren) {
     try {
       const [saved, prefs] = await Promise.all([moodStorage.read(), moodStorage.settings()]);
       setEntries(saved);
-      setSettings(prefs);
+      setSettings((current) =>
+        current.name === prefs.name &&
+        current.theme === prefs.theme &&
+        current.haptics === prefs.haptics
+          ? current
+          : prefs,
+      );
       setStorageError(null);
     } catch (error) {
       setStorageError(
@@ -85,7 +127,17 @@ export function MoodProvider({ children }: PropsWithChildren) {
   }, []);
   useEffect(() => {
     void reload();
-    const clock = setInterval(() => setNow(new Date()), 30000);
+    const clock = setInterval(() => {
+      if (AppState.currentState !== 'active') return;
+      const next = new Date();
+      // Screens only display the day and hourly greeting. The composer takes its
+      // own precise timestamp when opened, without waking every mounted screen.
+      setNow((current) =>
+        current.toDateString() === next.toDateString() && current.getHours() === next.getHours()
+          ? current
+          : next,
+      );
+    }, 30000);
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         setNow(new Date());
@@ -106,63 +158,74 @@ export function MoodProvider({ children }: PropsWithChildren) {
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, [reload]);
-  const feedback = (success = false) => {
-    if (!settings.haptics || Platform.OS === 'web') return;
-    void (
-      success
-        ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-        : Haptics.selectionAsync()
-    ).catch(() => undefined);
-  };
-  const value: MoodContextValue = {
-    entries,
-    settings,
-    ready,
-    storageError,
-    now,
-    composer,
-    detail,
-    breathing,
-    toast,
-    notify,
-    reload,
-    feedback,
-    openComposer: (request = {}, options) => {
-      setNow(new Date());
-      setComposer((current) => (options?.preserveDraft && current ? current : request));
-      feedback();
+  const feedback = useCallback(
+    (success = false) => {
+      if (!settings.haptics || Platform.OS === 'web') return;
+      void (
+        success
+          ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+          : Haptics.selectionAsync()
+      ).catch(() => undefined);
     },
-    closeComposer: () => setComposer(null),
-    openDetail: setDetail,
-    setBreathing,
-    persistEntry: async (entry, editing) => {
-      setEntries(
-        await (editing ? moodStorage.update(entry, composer?.entry) : moodStorage.save(entry)),
-      );
-      feedback(true);
-      notify(editing ? '修改已保存，每一种感受都值得被记录。' : '已记录这一刻，谢谢你照顾自己。');
-    },
-    removeEntry: async (id, expected) => {
-      setEntries(await moodStorage.remove(id, expected));
-      notify('这条记录已删除。');
-    },
-    updateSettings: async (next) => {
-      await moodStorage.saveSettings(next);
-      setSettings(next);
-    },
-    importEntries: async (incoming) => {
-      const result = await moodStorage.merge(incoming);
-      setEntries(result.entries);
-      return result;
-    },
-  };
+    [settings.haptics],
+  );
+  const actions = useMemo<MoodActions>(
+    () => ({
+      notify,
+      reload,
+      feedback,
+      openComposer: (request = {}, options) => {
+        setComposer((current) => (options?.preserveDraft && current ? current : request));
+        feedback();
+      },
+      closeComposer: () => setComposer(null),
+      openDetail: setDetail,
+      setBreathing,
+      persistEntry: async (entry, editing) => {
+        setEntries(
+          await (editing
+            ? moodStorage.update(entry, composerRef.current?.entry)
+            : moodStorage.save(entry)),
+        );
+        feedback(true);
+        notify(editing ? '修改已保存，每一种感受都值得被记录。' : '已记录这一刻，谢谢你照顾自己。');
+      },
+      removeEntry: async (id, expected) => {
+        setEntries(await moodStorage.remove(id, expected));
+        notify('这条记录已删除。');
+      },
+      updateSettings: async (next) => {
+        await moodStorage.saveSettings(next);
+        setSettings(next);
+      },
+      importEntries: async (incoming) => {
+        const result = await moodStorage.merge(incoming);
+        setEntries(result.entries);
+        return result;
+      },
+    }),
+    [feedback, notify, reload],
+  );
+  const data = useMemo(
+    () => ({ entries, settings, ready, storageError }),
+    [entries, settings, ready, storageError],
+  );
+  const overlays = useMemo(() => ({ composer, detail, breathing }), [composer, detail, breathing]);
   return (
-    <MoodContext.Provider value={value}>
-      <ThemeContext.Provider value={isDark ? darkTheme : lightTheme}>
-        <HealthSyncProvider entries={entries} ready={ready && !storageError}>
-          {children}
-        </HealthSyncProvider>
-      </ThemeContext.Provider>
-    </MoodContext.Provider>
+    <DataContext.Provider value={data}>
+      <ActionsContext.Provider value={actions}>
+        <ClockContext.Provider value={now}>
+          <OverlaysContext.Provider value={overlays}>
+            <ToastContext.Provider value={toast}>
+              <ThemeContext.Provider value={isDark ? darkTheme : lightTheme}>
+                <HealthSyncProvider entries={entries} ready={ready && !storageError}>
+                  {children}
+                </HealthSyncProvider>
+              </ThemeContext.Provider>
+            </ToastContext.Provider>
+          </OverlaysContext.Provider>
+        </ClockContext.Provider>
+      </ActionsContext.Provider>
+    </DataContext.Provider>
   );
 }
