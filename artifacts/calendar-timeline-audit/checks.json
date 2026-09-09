@@ -1,0 +1,12 @@
+[
+  "29 records across September and August; pagination completes; duplicate hidden",
+  "Local source and cross-month search work; collapsed controls retain active filter summary",
+  "Calendar day selection and return to all history passed",
+  "Mood filtering and reset passed; previous month selects matching day; year view preserved",
+  "Pending Apple read keeps local history and explicit waiting state",
+  "Apple-only history covers all three dates and remains read-only",
+  "All three composer steps: aligned top, no decorative edge line; close dismisses directly without saving",
+  "Confirmed 320px iframe: source/toolbar tabs and filter action remain within viewport",
+  "390px and 1180px production preview; records/insights switch without overlap; record navigation label updated",
+  "Record label preserved; original calendar icon restored"
+]

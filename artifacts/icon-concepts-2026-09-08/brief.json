@@ -1,0 +1,48 @@
+{
+  "objective": "Three icon directions for owner selection; independently fix opaque launch image.",
+  "execution": "Built-in ImageGen; concept icons are preview-only until user selects.",
+  "primary_message": "A personal space for recording every kind of feeling.",
+  "locks": [
+    "Keep assets/app-icon.png unchanged until explicit selection",
+    "No text inside icons",
+    "One clear primary symbol per icon",
+    "1:1 square, full-bleed opaque backgrounds for app icons; system masking later"
+  ],
+  "composition": {
+    "anchor": "center",
+    "symbol_width": "60–65%",
+    "thumbnail_px": 48
+  },
+  "edit_contract": {
+    "id": "splash-alpha-01",
+    "status": "ready",
+    "execution_allowed": true,
+    "source_checkpoint": "assets/app-icon.png",
+    "target": "opaque background and monochrome mark colors",
+    "mutation": "Create a transparent launch-screen derivative with purple ink",
+    "protected": [
+      "face geometry",
+      "stroke width",
+      "centering",
+      "square canvas",
+      "original app icon file"
+    ]
+  },
+  "qa": [
+    "Three different visual ideas",
+    "Thumbnail recognition",
+    "No presentation mockup or baked outer corner mask",
+    "Splash alpha corners fully transparent",
+    "New icon not applied without user selection"
+  ],
+  "selection": {
+    "approved_by": "user",
+    "option": "03-mood-pixels",
+    "product_name": "情绪像素",
+    "applied_assets": [
+      "assets/app-icon.png",
+      "assets/brand-icon.png",
+      "assets/pwa-icon.png"
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-09",
+  "selectedBy": "user screenshot correction",
+  "selection": "Center smile in cream middle tile; orange circle at upper right",
+  "source": "grid-smile-refined/a-center-light.png",
+  "prompt": "grid-smile-refined/prompts/a.txt",
+  "referenceScreenshot": "approved-reference.png",
+  "sourceSHA256": "40fb3b69d669a15d01579f17d6b7265e0655952a68ddb8fb4346c3e169a6b70e",
+  "supersedes": "2.1.6 incorrectly used c-smile-calm.png. The attached user screenshot is the authoritative selection.",
+  "generation": "Existing source image, exported without redesign",
+  "deployment": "Correct image published on GitHub Pages and available as TestFlight 2.1.7 (11) in the original personal testing group, verified 2026-09-09 07:22 UTC",
+  "assets": [
+    {
+      "path": "assets/app-icon.png",
+      "size": 1024,
+      "sha256": "464eda050c5ed32fab29161357c833e629dd71665d1ab16a3d9e40a5d61fe246"
+    },
+    {
+      "path": "assets/brand-icon.png",
+      "size": 128,
+      "sha256": "45295ee67e52865e9536f66b0275e558552d1155ca55dfad79990abc2ce2256e"
+    },
+    {
+      "path": "assets/pwa-icon.png",
+      "size": 512,
+      "sha256": "d046eee2ac5ccc762559bfe4249875af0fec66ac2617e0e43945b5bf71422ac1"
+    }
+  ]
+}
