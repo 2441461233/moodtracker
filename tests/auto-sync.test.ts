@@ -453,24 +453,35 @@ test('journal failure cancels a query, clears health data, and never leaves a st
   f.sync.dispose();
 });
 
-test('asynchronous observer failures cannot reset and exceed the recovery retry budget', async () => {
+test('asynchronous observer failures cannot reset and exceed the recovery retry budget', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const f = fixture({ retries: [1, 1, 1] });
-  const timers: ReturnType<typeof setTimeout>[] = [];
+  t.after(() => f.sync.dispose());
   f.onStart(() => {
-    timers.push(
-      setTimeout(() => {
-        f.observation.observing = false;
-        f.observation.errorCode = 'ERR_MOOD_HEALTH_OBSERVER';
-        f.sync.healthChanged();
-      }, 2),
-    );
+    f.observation.errorCode = undefined;
+    setTimeout(() => {
+      f.observation.observing = false;
+      f.observation.errorCode = 'ERR_MOOD_HEALTH_OBSERVER';
+      f.sync.healthChanged();
+    }, 2);
   });
   await f.start();
-  await new Promise((done) => setTimeout(done, 45));
+  assert.equal(f.counters.starts, 1);
+  // Let each asynchronous failure finish before advancing its recovery timer.
+  for (let starts = 2; starts <= 4; starts++) {
+    t.mock.timers.tick(2);
+    await f.sync.waitForIdle();
+    assert.equal(f.sync.getSnapshot().status, 'attention');
+    t.mock.timers.tick(1);
+    await f.sync.waitForIdle();
+    assert.equal(f.counters.starts, starts);
+    assert.equal(f.sync.getSnapshot().status, 'idle');
+  }
+  t.mock.timers.tick(2);
+  await f.sync.waitForIdle();
+  t.mock.timers.tick(100);
   await f.sync.waitForIdle();
   assert.equal(f.counters.starts, 4);
   assert.equal(f.sync.getSnapshot().status, 'attention');
   assert.equal(f.counters.authorization, 1);
-  f.sync.dispose();
-  timers.forEach(clearTimeout);
 });
