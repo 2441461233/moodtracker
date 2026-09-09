@@ -8,7 +8,7 @@
   "sourceSHA256": "40fb3b69d669a15d01579f17d6b7265e0655952a68ddb8fb4346c3e169a6b70e",
   "supersedes": "2.1.6 incorrectly used c-smile-calm.png. The attached user screenshot is the authoritative selection.",
   "generation": "Existing source image, exported without redesign",
-  "deployment": "Preparing corrective web and TestFlight release 2.1.7",
+  "deployment": "Correct image published on GitHub Pages and available as TestFlight 2.1.7 (11) in the original personal testing group, verified 2026-09-09 07:22 UTC",
   "assets": [
     {
       "path": "assets/app-icon.png",
