@@ -116,6 +116,7 @@ export function Button({
   busy,
   style,
   label,
+  testID,
 }: PropsWithChildren<{
   onPress: () => void;
   icon?: string;
@@ -124,6 +125,7 @@ export function Button({
   busy?: boolean;
   style?: StyleProp<ViewStyle>;
   label?: string;
+  testID?: string;
 }>) {
   const theme = useTheme();
   const primary = kind === 'primary';
@@ -148,6 +150,7 @@ export function Button({
   );
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: disabled || busy, busy }}

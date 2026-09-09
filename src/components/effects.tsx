@@ -61,22 +61,49 @@ export function Gradient({
   borderRadius?: number;
 }>) {
   const id = useGradientId();
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+  const native = Platform.OS !== 'web';
   return (
-    <View style={[style, { borderRadius, overflow: 'hidden' }]}>
-      <Svg width="100%" height="100%" pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <Defs>
-          <SvgLinearGradient id={id} x1={start.x} y1={start.y} x2={end.x} y2={end.y}>
-            {colors.map((color, index) => (
-              <Stop
-                key={index}
-                offset={colors.length === 1 ? 0 : index / (colors.length - 1)}
-                stopColor={color}
-              />
-            ))}
-          </SvgLinearGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+    <View
+      style={[style, { borderRadius, overflow: 'hidden' }]}
+      onLayout={
+        native
+          ? ({ nativeEvent: { layout } }) => {
+              const width = Math.max(layout.width, 0);
+              const height = Math.max(layout.height, 0);
+              setSize((current) =>
+                current?.width === width && current.height === height ? current : { width, height },
+              );
+            }
+          : undefined
+      }
+    >
+      {/* Keep the background outside the padded content row. Native SVG uses
+          measured bounds instead of percentage dimensions under Fabric. */}
+      <View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          native && !size ? { backgroundColor: colors[0] } : undefined,
+        ]}
+      >
+        {(!native || size) && (
+          <Svg width={native ? size!.width : '100%'} height={native ? size!.height : '100%'}>
+            <Defs>
+              <SvgLinearGradient id={id} x1={start.x} y1={start.y} x2={end.x} y2={end.y}>
+                {colors.map((color, index) => (
+                  <Stop
+                    key={index}
+                    offset={colors.length === 1 ? 0 : index / (colors.length - 1)}
+                    stopColor={color}
+                  />
+                ))}
+              </SvgLinearGradient>
+            </Defs>
+            <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+          </Svg>
+        )}
+      </View>
       {children}
     </View>
   );

@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   native:
-    name: Compile app, HealthKit and widgets (no signing)
+    name: Compile and exercise native recording UI (no signing)
     runs-on: macos-15
     timeout-minutes: 45
     env:
@@ -27,6 +27,7 @@ jobs:
       EXPO_NO_TELEMETRY: 1
       COCOAPODS_DISABLE_STATS: true
       EXPO_PUBLIC_BASE_URL: ''
+      MOODTRACKER_IOS_UI_TESTS: 1
     steps:
       - uses: actions/checkout@v6
         with:

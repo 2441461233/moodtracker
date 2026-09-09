@@ -106,6 +106,7 @@ export function EntryComposer() {
           <View style={{ flexDirection: 'row', gap: 12 }}>
             {step > 0 && (
               <Button
+                testID="composer-back"
                 onPress={() => setStep(step - 1)}
                 kind="secondary"
                 icon="arrow-left"
@@ -115,6 +116,7 @@ export function EntryComposer() {
               </Button>
             )}
             <Button
+              testID="composer-next"
               onPress={step === 2 ? save : () => setStep(step + 1)}
               disabled={!emotion}
               busy={saving}
@@ -128,6 +130,7 @@ export function EntryComposer() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="跳过选填，直接保存"
+              testID="composer-skip"
               disabled={saving}
               onPress={save}
               style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
@@ -177,6 +180,7 @@ export function EntryComposer() {
             return (
               <Pressable
                 key={key}
+                testID={`composer-emotion-${key}`}
                 accessibilityRole="radio"
                 accessibilityLabel={mood.label}
                 accessibilityState={{ checked: active }}
@@ -223,6 +227,7 @@ export function EntryComposer() {
               return (
                 <Pressable
                   key={activity.id}
+                  testID={`composer-activity-${activity.id}`}
                   accessibilityRole="checkbox"
                   accessibilityLabel={activity.label}
                   accessibilityState={{ checked: active }}
@@ -359,6 +364,7 @@ const NoteInput = memo(function NoteInput({
   return (
     <View>
       <TextInput
+        testID="composer-note"
         accessibilityLabel="心情笔记"
         placeholder="愿意告诉我，刚刚发生了什么吗？"
         placeholderTextColor={theme.muted}

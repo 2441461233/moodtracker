@@ -176,6 +176,7 @@ export function Sheet({
             />
           </View>
           <ScrollView
+            testID="sheet-scroll"
             ref={scroll}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}

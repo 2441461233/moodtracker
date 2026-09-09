@@ -126,10 +126,14 @@ console.log('Verified MoodHealth, MoodWidgets, RNDateTimePicker pod targets and 
 NODE
 
 printf 'Building workspace %s, scheme %s\n' "$ios_verify_workspace" "$ios_verify_scheme"
+ios_verify_configuration=Debug
+if [[ "${MOODTRACKER_IOS_UI_TESTS:-0}" == 1 ]]; then
+  ios_verify_configuration=Release
+fi
 xcodebuild \
   -workspace "$ios_verify_workspace" \
   -scheme "$ios_verify_scheme" \
-  -configuration Debug \
+  -configuration "$ios_verify_configuration" \
   -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath "$ios_verify_output/DerivedData" \
@@ -139,10 +143,15 @@ xcodebuild \
   CODE_SIGN_IDENTITY='' \
   build 2>&1 | tee "$ios_verify_logs/xcodebuild.log"
 
-ios_verify_widget="$ios_verify_output/DerivedData/Build/Products/Debug-iphonesimulator/$ios_verify_scheme.app/PlugIns/QuickRecordWidget.appex"
+ios_verify_widget="$ios_verify_output/DerivedData/Build/Products/$ios_verify_configuration-iphonesimulator/$ios_verify_scheme.app/PlugIns/QuickRecordWidget.appex"
 if [[ ! -f "$ios_verify_widget/QuickRecordWidget" ]]; then
   printf '%s\n' 'The built app is missing the compiled widget extension.' >&2
   exit 1
+fi
+
+if [[ "${MOODTRACKER_IOS_UI_TESTS:-0}" == 1 ]]; then
+  bash scripts/verify-ios-ui.sh "$ios_verify_workspace" "$ios_verify_project" \
+    "$ios_verify_output/DerivedData" "$ios_verify_logs"
 fi
 
 printf '%s\n' 'Unsigned iOS Simulator native compilation succeeded. No TestFlight build was uploaded.'
