@@ -1,14 +1,29 @@
-# iOS 2.1.6 发布与真机验收
+# iOS 2.1.7 发布与真机验收
 
-## 本次发布：2.1.6，正在准备 TestFlight 安装包
+## 本次发布：2.1.7，纠正为用户截图指定的中央笑脸图标
 
-2026-09-09：用户确认采用本轮 C「弯眼微笑」九宫格图标，并明确要求同步更新 iPhone 安装包。沿用原 App、Bundle ID、Team、App Group 和内部「个人测试组」。
+2026-09-09：用户截图明确要求「中间米黄色格子内有小笑脸，右上角为橙色圆点」的款式。已找到匹配原图 `artifacts/icon-concepts-2026-09-09/grid-smile-refined/a-center-light.png`，源图 SHA-256 为 `40fb3b69d669a15d01579f17d6b7265e0655952a68ddb8fb4346c3e169a6b70e`。参考截图归档为 `approved-reference.png`，最终选择和生产资产哈希记录在同目录的 `selection.json`。
+
+- 直接从原图导出 App 1024 px、品牌 128 px、PWA 512 px 资源，无重新设计；图案位置、橙色圆点、中心表情和配色以截图为准。
+- 本轮纠正 2.1.6 的素材选择错误，其他应用逻辑不变；沿用现有 App、签名、原「个人测试组」及已配置的 EAS 发布密钥。
+- 正在构建和发布 2.1.7，尚未代表新安装包已可更新。
+
+## 上一版本：2.1.6（10），已分发，但用户指出图标选错
+
+2026-09-09：此版本将用户的方案编号误解为 C「弯眼微笑」，完成分发后，用户提供截图指出应使用中央笑脸与右上橙色圆点款式；纠正版本见上方 2.1.7。以下保留 2.1.6 的真实构建与分发记录。
 
 - 生产图标已更新为等大九宫格与弯眼微笑，主 App 图标 1024 px、网页标识 128 px、PWA 图标 512 px；均为 RGB PNG，无透明通道。
 - 上一个图标提交 `44f992182f2d967e10061e2d88988622addcd44b` 的[网页 CI 与部署](https://github.com/2441461233/moodtracker/actions/runs/34320145442)成功，线上三类图标的 SHA-256 已与本地发布文件核对一致。
 - 本次安装包将继续包含 2.1.5 的产品名称、启动画面修复与两种小组件；日记存储键、已有权限和签名身份保持兼容。
-- 正在生成新版本；本节尚不代表新包已经上传或可在 TestFlight 安装。
 - 发布前 `npm run verify` 已通过：类型检查、201 项应用 / 原生配置测试、Web 导出及 19 项网页测试，共 220 项。
+- 应用源码提交为 `2f16240ae0e8f983948927e18bec07376ec7c6f5`。[EAS 正式构建 f27c8a44](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/f27c8a44-266d-461f-85ea-d07adc88c0c3)为 `FINISHED`，完成于 2026-09-09 06:55:08.243 UTC，版本 **2.1.6（10）**，源码与此提交精确匹配。
+- 06:55:41 UTC 已下载并核验确切 IPA：主 App 和 `QuickRecordWidget.appex` 均通过 `codesign --verify --deep --strict`，名称、Bundle ID、Team、App Group、版本与 build 正确；实际签名证书存在于各自 profile。两份 profile 均为 App Store 分发、`get-task-allow=false`、2027-09-03 到期；主 App 保留 HealthKit / Background Delivery，扩展无 HealthKit。SDK `iphoneos26.2`，最低 iOS 15.1。
+- 实际安装包的桌面图标已解码查看，确认为 C「弯眼微笑」；包内品牌图与本地发布资产逐字节一致。IPA 为 **11,807,830 字节**，SHA-256：`e8b0e158b00f8d1da83b7a0cba70e27961ac4c98c535ca507c2d68648996cf20`。
+- 首次网页 CI 因旧观察器重试测试的固定 45 ms 等待竞态失败；提交 `7440c27c61f118737d6b1ba99bd4195dc02817f4` 仅修正该测试为逐次推进模拟定时器，明确检查三次恢复及重试上限。本地 201 项应用测试通过，[网页回归与部署 34321286339](https://github.com/2441461233/moodtracker/actions/runs/34321286339)也已成功；安装包应用源码不受这条测试修订影响。
+- [EAS 上传任务 8b66d040](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/8b66d040-426c-464c-a594-07603b35e678)已独立核实为 `FINISHED`，完成于 **2026-09-09 07:04:05.353 UTC**。关联 App ID、构建 ID、版本 / build 和源码提交均精确匹配；本次使用 EAS 已托管的 API 密钥，无需专用密码。
+- **2026-09-09 07:07 UTC，已在[原「个人测试组」](https://appstoreconnect.apple.com/teams/93dd1b91-a79c-4c54-8ba3-0dd5bf8bc33a/apps/6776595613/testflight/groups/c3a1a107-7438-48ac-802c-e9634d77ba5a/builds)核实 2.1.6（10）「正在测试」、90 天后过期。** ASC build ID `8df1ba31-95f8-455e-99db-0c9cece31751`，上传时间 15:04（北京时间）。原组仍为 1 个测试员、自动分发开启，未新增 App、测试组或测试员。
+- 该构建的测试说明包含新图标、启动背景衔接、升级后记录 / 设置保留及两种小组件的真机验收。TestFlight 分发已完成；真实 iPhone 升级和交互仍待用户验收。
+- 独立[模拟器原生 CI 34321286357](https://github.com/2441461233/moodtracker/actions/runs/34321286357)已成功，完成于 2026-09-09 07:09 UTC；实际编译主 App、HealthKit 和小组件。测试修订仅改变测试文件，未改变已上传的应用源码。
 
 ## 上一安装包：2.1.5（9），正式构建、安装包核验与上传完成
 
@@ -22,7 +37,7 @@
 - 已下载该确切 IPA，主 App 和 `QuickRecordWidget.appex` 均通过 `codesign --verify --deep --strict`。实际显示名称为「情绪像素」和「情绪像素小组件」，均为 **2.1.5（9）**、最低 iOS 15.1、SDK `iphoneos26.2`；签名证书存在于各自内嵌 profile 中，Team / Bundle ID / App Group 一致，均为 App Store 分发且 `get-task-allow=false`。主 App 保留 HealthKit / Background Delivery、原 URL scheme 和加密声明，扩展不含 HealthKit。
 - 实际 IPA 中的图标已解码查看，确认为选定的第三款像素图标。IPA 为 11,779,670 字节，SHA-256：`a37e59b264c5167f249ccfe52e99f5f87916d99160b5ec92422b93bb198d04ee`。
 - Apple 后台已重新登录，原 App `6776595613` 的简体中文名称已保存为「情绪像素」。用户确认只发布到原内部「个人测试组」，未提交 App Store 公开审核。
-- 2026-09-09 补充核实：[EAS 上传任务 71cc3b6f](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/71cc3b6f-7cbc-4252-9fad-eb1bb7c4aaec)为 `FINISHED`，完成于 2026-09-08 03:42:55.688 UTC；本机上传日志同样确认 App Store Connect 已接收。账号所有者已完成一次性上传验证，凭据未保存。原测试组状态待本次重新登录后核对；下方 2.1.4（8）的测试组证据仅对应该历史安装包。
+- 2026-09-09 补充核实：[EAS 上传任务 71cc3b6f](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/71cc3b6f-7cbc-4252-9fad-eb1bb7c4aaec)为 `FINISHED`，完成于 2026-09-08 03:42:55.688 UTC；本机上传日志同样确认 App Store Connect 已接收。账号所有者已完成一次性上传验证，凭据未保存。同日重新登录后，已在原「个人测试组」确认 **2.1.5（9）「正在测试」**、89 天后过期；ASC build ID `8e329727-a1ad-4e51-b5ef-f2cb1fb2baf6`。
 
 ## 上一版本：2.1.4（8），内部 TestFlight 已可更新
 
@@ -94,9 +109,9 @@
 ## 现有应用，不新建另一个 App
 
 - Bundle ID：`com.zhenyu.moodjournal.app`
-- App Store Connect App ID：`6776595613`（现有“情绪记录”）
+- App Store Connect App ID：`6776595613`（现有「情绪像素」）
 - Apple Developer Team：`9PB9F396XQ`
-- 当前内部 TestFlight 可更新版本：2.1.4（build 8），EAS production 已完成远端版本号递增。历史内部 TestFlight 版本为 2.1.3（build 7）、2.1.2（build 6）、2.1.1（build 5）及 2.1.0（build 4）。
+- 当前内部 TestFlight 可更新版本：2.1.6（build 10），EAS production 已完成远端版本号递增。历史内部 TestFlight 版本为 2.1.0（build 4）至 2.1.5（build 9）。
 - 保留日记存储键 `mood_entries` 与原有数据结构。请用户先导出备份；不要让用户卸载旧 App 来更新。
 
 Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pages 的发布也不是 iOS 发布。
@@ -140,9 +155,11 @@ Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pag
 
 登录必须由所有者在官方页面或受控终端中完成。不要把 Apple / Expo 密码、验证码、应用专用密码贴入聊天或提交仓库。生成或授权长期密钥前，确认具体权限与保管方式，不自动扩大账号访问范围。
 
+**2026-09-09 起，后续上传直接复用已有发布密钥，不再默认要求用户填写 App 专用密码。** 用户已本人同意 Apple API 开通条款，并要求解决每次重新填密码的问题。现有 `MoodPixels EAS Submit` 团队密钥使用 `App 管理` 权限，已绑定 `@zhen2yu/moodtracker` 的主 App `com.zhenyu.moodjournal.app` 用于 EAS Submit。本次 2.1.6（10）非交互上传已实际验证输出 `API Key already set up`、`Key Source: EAS servers` 并上传成功。密钥由现有 EAS 账号加密托管，临时下载的私钥文件已删除，仓库中没有私钥；保管与复用机制见 [Expo 官方说明](https://docs.expo.dev/app-signing/security/#apple-app-store-connect-asc-api-key)。若后续认证失败，先检查现有密钥和 EAS 登录状态，再判断是否真的需要用户操作，不要重新走一次性密码输入页。
+
 production 使用 `credentialsSource=local`，由本地提供签名材料，仍由 EAS 云端构建机完成构建与签名，不是本机 Xcode 构建。`credentials.json` 已加入忽略规则；签名材料和密码不进入 Git 仓库。
 
-2.1.0（4）至当前 2.1.4（8）均已上传并在原内部测试组可用，无需重复提交或创建同一应用源码的构建。以下为后续新原生版本的通用步骤：先安装并核实 EAS CLI 23.2.0，核对账号与签名凭据，再在项目目录执行：
+历史安装包不重复提交。以下为后续新原生版本的通用步骤：先安装并核实 EAS CLI 23.2.0，核对账号与签名凭据，再在项目目录执行：
 
 ```sh
 eas --version
@@ -152,11 +169,11 @@ eas build --platform ios --profile production --non-interactive --freeze-credent
 eas submit --platform ios --profile production --id "$VERIFIED_EAS_BUILD_ID" --non-interactive --wait --no-auto-testflight-setup
 ```
 
-提交时明确选择已核对的新构建，不凭 `--latest` 猜测是否为正确包。应用专用密码仅通过受控上传进程的环境传入，不放入命令行参数、日志、`eas.json` 或仓库。2.1.1（5）至 2.1.4（8）均已分别核验主 App 内嵌 profile 与最终签名 IPA 的 HealthKit、HealthKit Background Delivery 及 Team / Bundle ID。2.1.4 还已独立核验主 App 与扩展的 App Group、版本和签名证书；以后每个新包仍需独立核验。
+提交时明确选择已核对的新构建，不凭 `--latest` 猜测是否为正确包；使用现有 EAS 托管 API 密钥即可，无需设置 `EXPO_APPLE_APP_SPECIFIC_PASSWORD`。以后每个新包仍需独立核验主 App 和扩展的签名、内嵌 profile、HealthKit、App Group、Team / Bundle ID 及版本。
 
 simulator / production 均固定 Node.js `22.23.1` 与 EAS 镜像 `macos-sequoia-15.6-xcode-26.2`，不使用 `latest` 镜像别名。上传前仍须核实符合 Apple 当时的 SDK 最低要求。EAS 设置 `MOODTRACKER_BUILD_TARGET=native`，`app.config.js` 仅在原生构建时强制空 base URL，避免携带 GitHub Pages 的 `/moodtracker/` 子路径；不向 EAS 传入空环境变量值。
 
-EAS Submit 只负责上传二进制。每次上传后都需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，并确认既有内部 TestFlight 组的可用性。当前 2.1.4（8）及历史 2.1.0（4）至 2.1.3（7）均已核实内部 TestFlight 可用；不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
+EAS Submit 只负责上传二进制。每次上传后都需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，并确认既有内部 TestFlight 组的可用性。当前 2.1.6（10）及历史版本均已分别核实内部 TestFlight 可用；不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
 
 已设置 `ios.config.usesNonExemptEncryption=false`，2.1.0（4）至当前 2.1.4（8）的最终签名 IPA 均已核实 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
 
