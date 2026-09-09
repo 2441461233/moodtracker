@@ -1,8 +1,10 @@
-# 情绪像素 · MoodTracker 2.1.8
+# 情绪像素 · MoodTracker 2.1.9
 
 一个温柔、私密、无需注册的心情空间。保留 Expo / React Native 原生项目，支持 iOS、Android 和响应式网页。
 
-**2.1.8（12）已可更新（2026-09-09）**：包含记录输入、弹窗切步、状态订阅、后台动画与存储快照优化。223 项测试、独立 iOS 编译及正式 IPA 验签通过；网页版已部署，原 TestFlight「个人测试组」已显示「正在测试」。本次直接复用 EAS 发布密钥完成上传。优化范围见 [交互性能记录](docs/interaction-performance-2026-09-09.md)，精确发布证据见 [iOS 发布记录](docs/ios-release.md)。iPhone 键盘与切页流畅度仍待真机试用确认。
+**2.1.9（14）已可更新（2026-09-09）**：修复 iPhone 上继续 / 保存按钮渐变截断及文字遮挡，保留上一版的输入与切步性能优化。226 项回归及 iOS 模拟器浅色 / 深色完整录入测试通过，关键原生截图已人工复核；网页版已部署，Apple 已确认原 TestFlight「个人测试组」为「正在测试」。详见 [按钮修复与原生截图](docs/native-button-regression-2026-09-09.md)和 [发布证据](docs/ios-release.md)。
+
+**2.1.8（12）历史发布（按钮问题已由 2.1.9 修复）（2026-09-09）**：包含记录输入、弹窗切步、状态订阅、后台动画与存储快照优化。223 项测试、独立 iOS 编译及正式 IPA 验签通过；网页版已部署，原 TestFlight「个人测试组」已显示「正在测试」。本次直接复用 EAS 发布密钥完成上传。优化范围见 [交互性能记录](docs/interaction-performance-2026-09-09.md)，精确发布证据见 [iOS 发布记录](docs/ios-release.md)。iPhone 键盘与切页流畅度仍待真机试用确认。
 
 **2.1.7（11）已可更新（2026-09-09）**：按用户截图使用「中央米黄色笑脸 + 右上橙色圆点」的原图，网页版已部署，原 TestFlight「个人测试组」已显示「正在测试」。220 项检查、独立 iOS 编译及正式安装包验签通过，线上与包内图标均已核验。上一版 2.1.6（10）误用图标的问题已修正。已配置可复用的 EAS 发布密钥，后续更新无需每次填写专用密码。精确证据见 [iOS 发布记录](docs/ios-release.md)。
 
@@ -51,7 +53,7 @@ npm run android
 
 普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
 
-当前 **2.1.8（12）已在既有内部 TestFlight 测试组可用**。通过 **TestFlight → 情绪像素 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
+当前 **2.1.9（14）已在既有内部 TestFlight 测试组可用**。通过 **TestFlight → 情绪像素 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
 
 生产构建及本地验收：
 

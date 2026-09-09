@@ -1,6 +1,22 @@
-# iOS 2.1.8 发布与真机验收
+# iOS 2.1.9 发布与原生验收
 
-## 本次发布：2.1.8（12），交互性能优化已在原内部 TestFlight 可更新
+## 本次发布：2.1.9（14），原生按钮修复已在原内部 TestFlight 可更新
+
+2026-09-09：修复用户截图中的「继续」按钮下半部发白、文字被遮挡问题。共享渐变组件改用独立背景层和原生实际宽高，首帧保留底色，尺寸不变时不重复更新。覆盖继续、保存及保存修改按钮；保留笔记输入、状态订阅、切步与后台动画的性能优化。设置页版本号直接读取配置，避免再显示旧版本。
+
+- 应用源码：`9d5f828cd412bfcdf919196a1ad1a409a0f95b7e`。`npm run verify` 和云端相同提交检查均通过：207 项应用 / 原生配置 / 存储 / 组件测试及 19 项网页测试，共 226 项。
+- [最终原生验收 34342120308](https://github.com/2441461233/moodtracker/actions/runs/34342120308)于 **11:06:43 UTC** 成功：iPhone 17 Pro / iOS 26.2 模拟器实际运行 Release App，浅色、深色两条完整录入流程通过，0 失败、0 跳过。包括未选心情禁用、继续、活动、系统键盘上的保存、笔记往返保留和最终保存入列表。按钮上下两处像素断言及人工截图复核通过，见 [原生修复与验收](native-button-regression-2026-09-09.md)。
+- [网页流水线 34342120345](https://github.com/2441461233/moodtracker/actions/runs/34342120345)等待上述原生门槛后，于 **11:06:55 UTC** 完成部署。线上设置页已核实 2.1.9，无浏览器运行错误。原生失败或超时会阻止网页部署。
+- [EAS 构建 75ccded4](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/75ccded4-9bb1-41f2-a377-1e64ae8d2c92)于 **10:44:30.877 UTC** 完成，为 **2.1.9（14）**，源码与上述提交精确一致。
+- 正式 IPA 已严格验签：主 App 与小组件均为 2.1.9（14），Bundle ID / Team / App Group、App Store 分发和 profile 证书匹配；保留原 HealthKit / Background Delivery、URL scheme 与加密声明。最低 iOS 15.1，SDK `iphoneos26.2`。包内已确认的中央笑脸与橙色圆点图标已查看，品牌图逐字节一致。
+- IPA 为 **11,775,143 字节**，SHA-256：`cec0ebf58529c1d367ea18e90ee64e28c2da2c7a62ba019ca82b2cffbb787077`。
+- 仅在上述两套同一提交检查成功后提交。[EAS 上传 0761694b](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/0761694b-4ddf-487c-bbfd-61efb95032fb)于 **11:20:30.629 UTC** 为 `FINISHED`；App ID、构建、版本和源码均精确匹配，复用现有 EAS 托管的发布密钥。
+- **11:24:28 UTC，Apple 官方 API 已核实 2.1.9（14）为 `VALID`、`IN_BETA_TESTING`，未过期，关联原[「个人测试组」](https://appstoreconnect.apple.com/teams/93dd1b91-a79c-4c54-8ba3-0dd5bf8bc33a/apps/6776595613/testflight/groups/c3a1a107-7438-48ac-802c-e9634d77ba5a/builds)。** ASC build ID：`11d16384-daa2-4bff-956a-c5bfcf13f961`。保留原内部组与自动通知设置，未新增测试组、测试员或 App。
+- **11:31 UTC**，该构建的中文测试说明已在 App Store Connect 显示「已保存」，包含按钮修复、原生录入与键盘回归结果；页面同时确认原「个人测试组」仍为内部组、1 个测试员。
+- 原始 [浅色继续截图](../artifacts/native-button-2.1.9/light-continue.png)、[深色键盘保存截图](../artifacts/native-button-2.1.9/dark-keyboard-save.png)及 [XCTest 摘要](../artifacts/native-button-2.1.9/native-ui-summary.json)已归档。截图来自最终发布提交，未裁切或编辑，使用合成测试数据。
+- 边界：无签名模拟器覆盖真实原生布局、键盘和本地保存，但没有签名 App Group，不能验收小组件实际同步；正式包权限与签名已另行验证。真实 iPhone 帧率、触感、健康授权及小组件实际同步仍需签名真机环境，未冒充已经完成。
+
+## 上一版本：2.1.8（12），交互性能优化与随后发现的按钮回归
 
 2026-09-09：按用户要求合入「优化心情记录交互流畅度」任务的改动，继续发布到原内部 TestFlight「个人测试组」。沿用已确认的中央笑脸与右上橙色圆点图标、现有签名身份和可复用 EAS 发布密钥。
 

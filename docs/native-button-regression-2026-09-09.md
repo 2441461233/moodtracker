@@ -17,8 +17,18 @@
 - 通过 [XCTest 截图附件](https://developer.apple.com/documentation/xctest/adding-attachments-to-tests-activities-and-issues) 保存每个关键步骤，供下载和复核。
 - 网页发布新增同一提交的原生 UI 验收门槛，原生工作流失败或超时会停止部署。
 
-## 状态
+## 验收结果
 
-本地 TypeScript、业务与网页回归已通过，新增 3 项组件回归通过。393×852 网页预览重走截图中的选「还好」→继续→活动→笔记→保存，背景与文字完整，合成笔记保存正确。
+- `npm run verify`：TypeScript、207 项应用 / 原生配置 / 存储 / 组件测试、19 项网页测试均通过，共 226 项。
+- 393×852 网页预览重走选「还好」→继续→活动→笔记→保存；深色跳过保存、编辑后立即保存也通过，完整保留中文与 emoji，没有重复记录或运行错误。
+- 修复分支的[原生 UI 验收 34341134317](https://github.com/2441461233/moodtracker/actions/runs/34341134317)通过后，最终发布源码 `9d5f828cd412bfcdf919196a1ad1a409a0f95b7e` 的[独立原生验收 34342120308](https://github.com/2441461233/moodtracker/actions/runs/34342120308)再次通过：iPhone 17 Pro / iOS 26.2 模拟器，实际 Release App，浅色和深色完整流程共 2 项，0 失败、0 跳过。
+- 两轮原生截图均已人工复核。最终提交的[浅色继续按钮](../artifacts/native-button-2.1.9/light-continue.png)和[深色键盘上的保存按钮](../artifacts/native-button-2.1.9/dark-keyboard-save.png)已原样归档；完整原生报告与 12 张关键截图在 CI 附件中。
+- [最终提交网页流水线 34342120345](https://github.com/2441461233/moodtracker/actions/runs/34342120345)在原生门槛通过后才部署。线上设置页已核实显示 2.1.9，无浏览器运行错误。
 
-原生运行结果和最终发布证据待本轮验收完成后补充。此文件当前不代表已发布。
+## 验证边界
+
+该运行验收使用无签名模拟器，覆盖真实原生绘制、系统键盘、步骤导航、文字保留与本地保存。模拟器没有签名 App Group，因此保存后可能提示小组件暂未更新；这不能作为正式包小组件同步的验收结果。正式 IPA 的主 App / 小组件签名、App Group 和 HealthKit entitlement 另行严格校验。真实 iPhone 帧率、硬件触感、健康权限及小组件实际同步仍需签名真机环境，未以网页或模拟器结果冒充。
+
+## 发布状态
+
+**2.1.9（14）已可更新。** 正式 IPA 验签、上传和 Apple 处理均已完成；2026-09-09 11:24 UTC 已通过 Apple 官方 API 核实原「个人测试组」为 `IN_BETA_TESTING`。网页版亦已部署。精确源码、构建、上传与分发证据见 [发布记录](ios-release.md)。
