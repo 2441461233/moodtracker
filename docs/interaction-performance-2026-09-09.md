@@ -42,4 +42,6 @@ node scripts/verify-timeline-ui.mjs --performance
 
 ## 原生验证边界
 
-本机缺少 Xcode / simctl，尚未实测 iPhone 中文输入法联想、键盘升降、系统时间滚轮、原生标签冻结恢复和真实帧率。Hermes 导出只验证 JavaScript 与资源可打包，不代表原生安装包编译或真机验收。本轮没有发布新安装包或部署线上版本。
+本机缺少 Xcode / simctl，尚未实测 iPhone 中文输入法联想、键盘升降、系统时间滚轮、原生标签冻结恢复和真实帧率。Hermes 导出只验证 JavaScript 与资源可打包，不能替代真机验收。
+
+随后按用户发布要求，本轮优化已作为 **2.1.8（12）** 于 2026-09-09 发布：223 项回归、独立 iOS 编译及正式 IPA 验签通过，网页版已部署，原 TestFlight「个人测试组」已显示「正在测试」。精确源码、构建、上传与分发证据见 [iOS 发布记录](ios-release.md)。上述真机性能验收边界仍然适用。

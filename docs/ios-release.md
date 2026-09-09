@@ -1,13 +1,21 @@
 # iOS 2.1.8 发布与真机验收
 
-## 本次发布：2.1.8，交互性能优化，构建与分发待核实
+## 本次发布：2.1.8（12），交互性能优化已在原内部 TestFlight 可更新
 
 2026-09-09：按用户要求合入「优化心情记录交互流畅度」任务的改动，继续发布到原内部 TestFlight「个人测试组」。沿用已确认的中央笑脸与右上橙色圆点图标、现有签名身份和可复用 EAS 发布密钥。
 
 - 笔记输入与字数独立更新，切步使用稳定的弹窗高度；拆分全局状态订阅，减少无关页面刷新、后台动画和重复统计 / 读取。
 - 未改变日记格式，保留完整草稿、立即保存、失败重试、重复提交与存储冲突保护。细节与浏览器渲染对照见 [交互性能验证](interaction-performance-2026-09-09.md)。
 - 发布前 `npm run verify` 已通过：TypeScript、204 项应用 / 原生配置 / 存储测试、Web 导出和 19 项网页测试，共 223 项。
-- 正式构建、IPA 验签、上传、Apple 处理与原组分发待核实；浏览器渲染计数不能替代 iPhone 键盘、原生导航和帧率验收。
+- 应用源码提交 `105056c29c98bc1d5ed9972854aaaf45fd1d1f4b` 的[网页部署 34336769802](https://github.com/2441461233/moodtracker/actions/runs/34336769802)已成功，2026-09-09 09:49 UTC 完成；线上脚本已确认版本 2.1.8，PWA 图标和 favicon 与本地导出逐字节一致。
+- [EAS 正式构建 ef0b6942](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/ef0b6942-6734-4796-be70-153e949c25f1)为 `FINISHED`，2026-09-09 **09:53:11.312 UTC** 完成，版本 **2.1.8（12）**，源码精确匹配上述提交。
+- 09:53:47 UTC 已核验该确切 IPA：主 App 和 `QuickRecordWidget.appex` 均通过严格验签，版本 / build、名称、Team / Bundle ID / App Group 正确；签名证书与各自 profile 匹配，App Store 分发、`get-task-allow=false`。主 App 保留 HealthKit / Background Delivery、原 URL scheme 和加密声明，扩展无 HealthKit；SDK `iphoneos26.2`，最低 iOS 15.1。
+- 实际包内桌面图标已解码查看，确认为已确认的中央笑脸与橙色圆点，品牌图与生产资产逐字节一致。IPA 为 **11,773,148 字节**，SHA-256：`3591d4007cad6caf5450b5df3f6aa2e445bc71c381b5721ba2d3fbf24ff9697a`。
+- 独立[原生 CI 34336769759](https://github.com/2441461233/moodtracker/actions/runs/34336769759)已成功，2026-09-09 09:58 UTC 完成，实际编译主 App、HealthKit 模块与小组件。
+- [EAS 上传任务 ed88abff](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/ed88abff-3c5a-4188-81fe-0e9de4eb47dd)已独立核实为 `FINISHED`，2026-09-09 **09:59:56.909 UTC** 完成；关联 App ID、构建 ID、版本 / build 和源码提交精确匹配。直接复用 EAS 托管密钥，无需再输入专用密码。
+- **2026-09-09 10:03 UTC，已在[原「个人测试组」](https://appstoreconnect.apple.com/teams/93dd1b91-a79c-4c54-8ba3-0dd5bf8bc33a/apps/6776595613/testflight/groups/c3a1a107-7438-48ac-802c-e9634d77ba5a/builds)核实 2.1.8（12）「正在测试」、90 天后过期。** ASC build ID `85aeaec8-5d13-40b8-bcc1-c722cecfacd8`，详情页保留原内部组及 1 个测试员，已完成 Apple 处理与分发。
+- 10:04 UTC，[该构建的测试说明](https://appstoreconnect.apple.com/teams/93dd1b91-a79c-4c54-8ba3-0dd5bf8bc33a/apps/6776595613/testflight/ios/85aeaec8-5d13-40b8-bcc1-c722cecfacd8)已显示「已保存」，覆盖中文 / emoji 输入、切步、键盘、立即保存 / 失败重试，以及升级后记录、健康连接和小组件检查。
+- iPhone 的中文输入法、键盘升降、原生标签冻结恢复与实际帧率仍待真机试用；浏览器渲染计数不能替代真机性能验收。
 
 ## 上一版本：2.1.7（11），正确图标已在原内部 TestFlight 可更新
 
@@ -129,7 +137,7 @@
 - Bundle ID：`com.zhenyu.moodjournal.app`
 - App Store Connect App ID：`6776595613`（现有「情绪像素」）
 - Apple Developer Team：`9PB9F396XQ`
-- 当前内部 TestFlight 可更新版本：2.1.7（build 11），EAS production 已完成远端版本号递增。历史内部 TestFlight 版本为 2.1.0（build 4）至 2.1.6（build 10）。
+- 当前内部 TestFlight 可更新版本：2.1.8（build 12），EAS production 已完成远端版本号递增。历史内部 TestFlight 版本为 2.1.0（build 4）至 2.1.7（build 11）。
 - 保留日记存储键 `mood_entries` 与原有数据结构。请用户先导出备份；不要让用户卸载旧 App 来更新。
 
 Apple Developer 会员与网页登录不等于命令行签名凭据；GitHub Pages 的发布也不是 iOS 发布。
