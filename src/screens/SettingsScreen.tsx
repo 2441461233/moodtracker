@@ -13,6 +13,7 @@ import { makeBackup, makeCSV } from '../lib/backup';
 import { exportText, pickBackup } from '../lib/transfer';
 import { dayKey } from '../lib/dates';
 import { groupByDay } from '../lib/insights';
+import appConfig from '../../app.json';
 
 export default function SettingsScreen() {
   const { settings, entries } = useMoodData();
@@ -328,7 +329,7 @@ export default function SettingsScreen() {
           </Label>
         </Disclosure>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
-          情绪像素 · 2.1.8
+          情绪像素 · {appConfig.expo.version}
         </Label>
         <Label muted style={{ fontSize: 11, lineHeight: 20 }}>
           用于自我记录与觉察，不提供诊断或治疗，不能替代专业支持。
