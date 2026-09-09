@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-09",
+  "selectedBy": "user",
+  "selection": "current option 3 / C: 弯眼微笑",
+  "source": "grid-smile-refined/c-smile-calm.png",
+  "prompt": "grid-smile-refined/prompts/c.txt",
+  "sourceSHA256": "ba05dc49c0942c0c9690e4f2256dcc127bd964057db19c033ea7d8ac2d328da5",
+  "generation": "Built-in ImageGen, refined from nine-cell mosaic face",
+  "deployment": "GitHub Pages web icon update; native installed icons require a new signed build",
+  "assets": [
+    {
+      "path": "assets/app-icon.png",
+      "size": 1024,
+      "sha256": "ae600d8b38de269accce793ce3ff8db0119cc2611d1ac2e3a3fc71b91f3165a3"
+    },
+    {
+      "path": "assets/brand-icon.png",
+      "size": 128,
+      "sha256": "0ed2e7e8d140a6e1f9978c61f461db6dc1de342e9a35e78aca9c2de7d571052d"
+    },
+    {
+      "path": "assets/pwa-icon.png",
+      "size": 512,
+      "sha256": "361db675943e7f4085fc617ceb27065cf2a51135e272dd19de5ce7f9dae3c1b5"
+    }
+  ]
+}
