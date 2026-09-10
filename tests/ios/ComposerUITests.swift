@@ -73,6 +73,13 @@ final class ComposerUITests: XCTestCase {
     XCTAssertTrue(note.waitForExistence(timeout: 5))
     note.tap()
     XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 2))
+    let inputVisible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      let viewport = self.element("sheet-scroll").frame
+      return note.isHittable && note.frame.minY >= viewport.minY &&
+        note.frame.maxY <= viewport.maxY && note.frame.maxY < next.frame.minY
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [inputVisible], timeout: 5), .completed,
+      "The focused note must stay visible above the footer when the keyboard opens")
     note.typeText("Native UI regression \(theme == "深色" ? "dark" : "light")")
     try assertFullGradient("\(theme)-04-save-with-keyboard")
     element("收起键盘").tap()

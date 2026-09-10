@@ -1,12 +1,19 @@
 # iOS 2.1.10 发布与原生验收
 
-## 本次发布：2.1.10，语音记录，正式构建与分发待核实
+## 本次发布：2.1.10，语音记录与键盘可见性修复，最终构建和分发待核实
 
 2026-09-10：按用户要求拉取远端语音实现 `0f821a65b94f6f80cfd253f2e3ee0d6543f58cfb`，将版本更新为 2.1.10，继续发布到原 TestFlight「个人测试组」。
 
+- **候选 2.1.10（15）未上传。** 自动保存流程虽通过，但人工复核原生截图发现键盘打开后正文输入框被上方内容挤出可视区。已增加键盘显示 / 可视区变化后的焦点输入框滚动定位，避免额外表单重绘；收键盘使用固定尺寸图标，修复文字截断。原生回归新增输入框完整处于滚动视口及保存按钮上方的断言。以下候选（15）的验签和 CI 证据不能代替修复后构建的验证。
 - 第三步默认语音，支持录音、暂停续录、原声本机保存、回听、单独导出和文字补充；配置服务后可上传转写、AI 整理、保留识别原文并手动修改。加入 ExpoAudio / ExpoSecureStore 和麦克风用途说明，需要完整原生包。
 - `npm ci` 和 `npm run verify` 已通过：216 项应用测试、5 项服务测试、19 项网页测试，共 240 项，以及 TypeScript 与 Web 导出。
-- 原语音实现的[原生检查 34364619184](https://github.com/2441461233/moodtracker/actions/runs/34364619184)已成功；本次发布提交的原生运行门槛、正式包验签、上传和分发仍待核实。
+- 候选（15）的源码为 `88c6a91e75255d81dbb00fbf47c1fe37de4a5aa0`，版本号由 app.json 统一显示。原语音实现的[原生检查 34364619184](https://github.com/2441461233/moodtracker/actions/runs/34364619184)已成功；本次发布提交的原生运行门槛已通过，上传和分发仍待核实。
+- [EAS 构建 81ba84ac](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/81ba84ac-c1ec-4a24-953a-9f7294607871)为 `FINISHED`，于 **2026-09-10 02:33:50.040 UTC** 完成，版本 **2.1.10（15）**，源码精确匹配上述提交。
+- 02:35:22 UTC 已核验实际 IPA：主 App 和 `QuickRecordWidget.appex` 均通过严格验签；版本、名称、Bundle ID / Team / App Group、证书与 profile 匹配，App Store 分发、`get-task-allow=false`；HealthKit / Background Delivery、URL scheme、加密声明保留。最低 iOS 15.1，SDK `iphoneos26.2`，满足本轮核对的 [Apple SDK 26 最低要求](https://developer.apple.com/news/upcoming-requirements/?id=02032026a)。
+- 包内具有中文 `NSMicrophoneUsageDescription`，主二进制包含 ExpoAudio / AudioModule 及 ExpoSecureStore / SecureStoreModule；未开启后台音频模式。品牌图与已确认素材逐字节一致，桌面图标已解码查看。
+- IPA 为 **11,974,396 字节**，SHA-256：`5473ce92b3035c2ed33366b51fb2595a1b4bb4429e7408cb58757cd5b08e4ef6`。
+- [发布提交原生检查 34429611522](https://github.com/2441461233/moodtracker/actions/runs/34429611522)于 **02:47:13 UTC** 成功，编译并运行 iOS 模拟器 Release App。原生报告与关键截图复核待归档。
+- [网页部署 34429611501](https://github.com/2441461233/moodtracker/actions/runs/34429611501)等待同一提交的原生门槛后，于 **02:47:41 UTC** 成功。线上脚本确认为 2.1.10，PWA 图标和 favicon 与本地导出逐字节一致。
 - **转写后端尚未完成本次线上配置确认。** 文档中的开发机 `server/.env` 不在当前机器，GitHub Secrets 也没有这份配置；尚未取得已部署的 HTTPS 服务地址。录音 / 回听与独立后端分开验证，不能把 App 发布称为云端转写已经接通。详情见 [语音记录说明](voice-recording.md)。
 - iOS 模拟器流程覆盖默认语音入口、文字输入、键盘与保存，不等于已验证真实麦克风、真机回听或云端转写。
 

@@ -1,15 +1,24 @@
 import React, {
   PropsWithChildren,
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, View } from 'react-native';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayout, useTheme } from '../theme';
-import { Button, IconButton, Label } from './ui';
+import { IconButton, Label } from './ui';
 import { useKeyboardVisible } from '../lib/useKeyboardVisible';
 import { useReducedMotion } from './effects';
 import { WidgetSheetContext } from '../context/WidgetSheetContext';
@@ -48,6 +57,40 @@ export function Sheet({
   const reducedMotion = useReducedMotion();
   const internalScroll = useRef<ScrollView>(null);
   const scroll = scrollRef ?? internalScroll;
+  const scrollOffset = useRef(0);
+  const revealFrame = useRef<number | undefined>(undefined);
+  const revealFocusedInput = useCallback(() => {
+    if (Platform.OS === 'web' || !Keyboard.isVisible()) return;
+    if (revealFrame.current !== undefined) cancelAnimationFrame(revealFrame.current);
+    revealFrame.current = requestAnimationFrame(() => {
+      revealFrame.current = undefined;
+      const input = TextInput.State.currentlyFocusedInput();
+      const viewport = scroll.current;
+      if (!input || !viewport) return;
+      // Measure the actual scroll viewport after keyboard avoidance. The footer
+      // also takes space, so the keyboard's screen position alone is insufficient.
+      viewport.getNativeScrollRef()?.measureInWindow((_x, top, _width, viewportHeight) => {
+        input.measureInWindow((_inputX, inputTop, _inputWidth, inputHeight) => {
+          if (TextInput.State.currentlyFocusedInput() !== input || viewportHeight <= 0) return;
+          const bottom = top + viewportHeight - 12;
+          const delta =
+            inputHeight > viewportHeight - 24 || inputTop < top + 12
+              ? inputTop - top - 12
+              : Math.max(0, inputTop + inputHeight - bottom);
+          if (Math.abs(delta) > 1)
+            viewport.scrollTo({ y: Math.max(0, scrollOffset.current + delta), animated: false });
+        });
+      });
+    });
+  }, [scroll]);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const subscription = Keyboard.addListener('keyboardDidShow', revealFocusedInput);
+    return () => {
+      subscription.remove();
+      if (revealFrame.current !== undefined) cancelAnimationFrame(revealFrame.current);
+    };
+  }, [revealFocusedInput]);
   const quickRecord = useContext(WidgetSheetContext);
   const [quickDismissing, setQuickDismissing] = useState(false);
   const latest = useRef({ visible, dismissDisabled, quickDismissing });
@@ -176,6 +219,11 @@ export function Sheet({
           <ScrollView
             testID="sheet-scroll"
             ref={scroll}
+            onLayout={revealFocusedInput}
+            onScroll={(event) => {
+              scrollOffset.current = event.nativeEvent.contentOffset.y;
+            }}
+            scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
             automaticallyAdjustKeyboardInsets={false}
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -222,13 +270,9 @@ function KeyboardDismissControl() {
       aria-hidden={!visible}
       accessibilityElementsHidden={!visible}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
-      style={{ width: 94, height: 44, opacity: visible ? 1 : 0 }}
+      style={{ width: 44, height: 44, opacity: visible ? 1 : 0 }}
     >
-      {visible && (
-        <Button kind="ghost" onPress={Keyboard.dismiss} style={{ paddingHorizontal: 6 }}>
-          收起键盘
-        </Button>
-      )}
+      {visible && <IconButton name="keyboard-close" label="收起键盘" onPress={Keyboard.dismiss} />}
     </View>
   );
 }
