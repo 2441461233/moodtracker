@@ -73,13 +73,23 @@ final class ComposerUITests: XCTestCase {
     XCTAssertTrue(note.waitForExistence(timeout: 5))
     note.tap()
     XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 2))
+    var inputGeometry = "Geometry was not sampled"
     let inputVisible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
       let viewport = self.element("sheet-scroll").frame
-      return note.isHittable && note.frame.minY >= viewport.minY &&
-        note.frame.maxY <= viewport.maxY && note.frame.maxY < next.frame.minY
+      // Each frame getter requests a native accessibility snapshot. Re-reading
+      // the same element made one sample exceed the old five-second deadline
+      // on a loaded runner, even with the input already fully visible.
+      let noteFrame = note.frame
+      let footerFrame = next.frame
+      let hittable = note.isHittable
+      inputGeometry = "note=\(noteFrame), viewport=\(viewport), footer=\(footerFrame), hittable=\(hittable)"
+      return hittable && noteFrame.minY >= viewport.minY &&
+        noteFrame.maxY <= viewport.maxY && noteFrame.maxY < footerFrame.minY
     }, object: nil)
-    XCTAssertEqual(XCTWaiter.wait(for: [inputVisible], timeout: 5), .completed,
-      "The focused note must stay visible above the footer when the keyboard opens")
+    let visibilityResult = XCTWaiter.wait(for: [inputVisible], timeout: 15)
+    capture("\(theme)-04-focused-input-geometry")
+    XCTAssertEqual(visibilityResult, .completed,
+      "The focused note must stay visible above the footer when the keyboard opens: \(inputGeometry)")
     note.typeText("Native UI regression \(theme == "深色" ? "dark" : "light")")
     try assertFullGradient("\(theme)-04-save-with-keyboard")
     element("收起键盘").tap()
