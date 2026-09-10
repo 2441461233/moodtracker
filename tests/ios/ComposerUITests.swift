@@ -97,4 +97,62 @@ final class ComposerUITests: XCTestCase {
 
   func testLightRecordFlow() throws { try flow(theme: "浅色") }
   func testDarkRecordFlow() throws { try flow(theme: "深色") }
+
+  // Exercise the actual ExpoAudio recorder and local files. No provider key or
+  // transcription server is configured on this fresh CI simulator.
+  func testRecordStopPlaybackAndSaveWithoutTranscriptionService() throws {
+    element("记录一个瞬间").tap()
+    element("composer-emotion-neutral").tap()
+    element("composer-next").tap()
+    element("composer-next").tap()
+    let start = element("voice-start")
+    XCTAssertTrue(start.waitForExistence(timeout: 5))
+    start.tap()
+    let permission = app.alerts.firstMatch
+    if permission.waitForExistence(timeout: 3) {
+      let allow = permission.buttons.matching(NSPredicate(format:
+        "label == %@ OR label == %@ OR label == %@", "允许", "Allow", "OK")).firstMatch
+      XCTAssertTrue(allow.exists, "Unexpected recording permission dialog: \(permission)")
+      allow.tap()
+    }
+    let stop = element("voice-stop")
+    XCTAssertTrue(stop.waitForExistence(timeout: 10), "Recorder did not start")
+    XCTAssertTrue(element("00:02").waitForExistence(timeout: 8), "Native recorder clock did not advance")
+    element("voice-pause").tap()
+    XCTAssertTrue(element("已暂停，可以继续说").waitForExistence(timeout: 3))
+    element("voice-pause").tap()
+    XCTAssertTrue(element("正在聆听…").waitForExistence(timeout: 3))
+    capture("voice-01-before-stop")
+    stop.tap()
+    let play = element("voice-play")
+    XCTAssertTrue(play.waitForExistence(timeout: 10), "App must survive stop and retain the native recording")
+    let playable = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      play.isEnabled && play.isHittable
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [playable], timeout: 10), .completed)
+    XCTAssertTrue(element("voice-retry").waitForExistence(timeout: 10), "Missing service must be a recoverable error")
+    capture("voice-02-retained-without-server")
+    play.tap()
+    let playing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+      play.label.contains("暂停")
+    }, object: nil)
+    XCTAssertEqual(XCTWaiter.wait(for: [playing], timeout: 5), .completed)
+    play.tap()
+    // Switching away unmounts the player. Keep the voice attachment and save.
+    element("composer-mode-text").tap()
+    let note = element("composer-note")
+    note.tap()
+    note.typeText("Native voice stop regression")
+    element("收起键盘").tap()
+    element("composer-mode-voice").tap()
+    XCTAssertTrue(element("voice-play").waitForExistence(timeout: 5))
+    element("composer-next").tap()
+    XCTAssertTrue(element("记录一个瞬间").waitForExistence(timeout: 10))
+    element("情绪记录").tap()
+    let saved = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Native voice stop regression")).firstMatch
+    XCTAssertTrue(saved.waitForExistence(timeout: 10))
+    saved.tap()
+    XCTAssertTrue(element("voice-play").waitForExistence(timeout: 5))
+    capture("voice-03-saved-recording")
+  }
 }
