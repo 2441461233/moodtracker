@@ -23,6 +23,19 @@ ui_device="$(xcrun simctl create MoodTracker-UI "$ui_device_type" "$ui_runtime")
 trap 'xcrun simctl shutdown "$ui_device" >/dev/null 2>&1 || true; xcrun simctl delete "$ui_device" >/dev/null 2>&1 || true' EXIT
 xcrun simctl boot "$ui_device"
 xcrun simctl bootstatus "$ui_device" -b
+# Install the exact compiled app and grant only the simulated microphone. This
+# avoids a system permission alert obscuring the native stop/playback regression.
+ui_app="$(node - "$ui_derived/Build/Products/Release-iphonesimulator" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const folder = process.argv[2];
+const apps = fs.readdirSync(folder).filter(name => name.endsWith('.app'));
+if (apps.length !== 1) throw new Error(`Expected one compiled app, got ${apps.length}`);
+process.stdout.write(path.join(folder, apps[0]));
+NODE
+)"
+xcrun simctl install "$ui_device" "$ui_app"
+xcrun simctl privacy "$ui_device" grant microphone com.zhenyu.moodjournal.app
 set +e
 xcodebuild test -workspace "$ui_workspace" -scheme MoodTrackerUI \
   -configuration Release -destination "platform=iOS Simulator,id=$ui_device" \
@@ -34,4 +47,14 @@ ui_status=${PIPESTATUS[0]}
 set -e
 xcrun xcresulttool export attachments --path "$ui_logs/NativeUI.xcresult" --output-path "$ui_logs/screenshots" || true
 xcrun xcresulttool get test-results summary --path "$ui_logs/NativeUI.xcresult" > "$ui_logs/native-ui-summary.json" || true
+if [[ "$ui_status" != 0 ]]; then
+  xcrun simctl spawn "$ui_device" log show --last 10m --style compact \
+    --predicate 'process == "app"' > "$ui_logs/app-runtime.log" 2>&1 || true
+  mkdir -p "$ui_logs/crashes"
+  while IFS= read -r -d '' ui_crash; do
+    if grep -q 'com.zhenyu.moodjournal.app' "$ui_crash"; then
+      cp "$ui_crash" "$ui_logs/crashes/"
+    fi
+  done < <(find "$HOME/Library/Logs/DiagnosticReports" -type f -name '*.ips' -print0 2>/dev/null)
+fi
 exit "$ui_status"

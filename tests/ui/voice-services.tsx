@@ -77,6 +77,34 @@ export function useAudioPlayerStatus(player: ReturnType<typeof useAudioPlayer>) 
   }, [player]);
   return state;
 }
+export function createAudioPlayer() {
+  const listeners = new Set<(status: object) => void>();
+  const player = {
+    playing: false,
+    currentTime: 0,
+    duration: 3,
+    get currentStatus() {
+      return { playing: this.playing, currentTime: this.currentTime, duration: this.duration };
+    },
+    play() {
+      this.playing = true;
+      listeners.forEach((notify) => notify(this.currentStatus));
+    },
+    pause() {
+      this.playing = false;
+      listeners.forEach((notify) => notify(this.currentStatus));
+    },
+    seekTo: async () => {},
+    addListener(_event: string, notify: (status: object) => void) {
+      listeners.add(notify);
+      return { remove: () => listeners.delete(notify) };
+    },
+    release() {
+      listeners.clear();
+    },
+  };
+  return player;
+}
 export const readVoiceConfig = async () => ({
   url: 'https://synthetic.invalid',
   token: 'synthetic-fixture-token',

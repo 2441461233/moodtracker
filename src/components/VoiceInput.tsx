@@ -12,7 +12,6 @@ import {
 import {
   AudioModule,
   RecordingPresets,
-  setAudioModeAsync,
   useAudioRecorder,
   useAudioRecorderState,
   type AudioRecorder,
@@ -24,6 +23,7 @@ import { retainRecording } from '../voice/files';
 import { currentVoice, getVoiceJob, startVoiceJob, subscribeVoiceJobs } from '../voice/jobs';
 import { formatDuration, MAX_RECORDING_MS, MAX_TRANSCRIPT_LENGTH } from '../voice/core';
 import { VoicePlayer } from './VoicePlayer';
+import { setPlaybackAudioMode, setRecordingAudioMode } from '../voice/audio-session';
 
 type Stage = 'idle' | 'starting' | 'recording' | 'paused' | 'finishing' | 'recover';
 export const VoiceInput = memo(function VoiceInput({
@@ -103,19 +103,16 @@ export const VoiceInput = memo(function VoiceInput({
         throw new Error('麦克风权限未开启，你仍然可以用文字记录。');
       }
       setPermissionDenied(false);
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
-        shouldPlayInBackground: false,
-        interruptionMode: 'doNotMix',
-      });
+      if (!alive.current) return;
+      await setRecordingAudioMode();
+      if (!alive.current) return;
       await recorder.prepareToRecordAsync();
       if (!alive.current) return;
       lastDuration.current = 0;
       recorder.record();
       transition('recording');
     } catch (error) {
-      void setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+      await setPlaybackAudioMode().catch(() => undefined);
       if (alive.current) {
         setError(error instanceof Error ? error.message : '录音未能开始，请重试。');
         transition('idle');
@@ -144,6 +141,9 @@ export const VoiceInput = memo(function VoiceInput({
         captured.current = { uri: recorder.uri, duration };
       }
       const next = await retainRecording(captured.current.uri, captured.current.duration);
+      // The native recorder must finish changing audio mode before publishing
+      // the attachment mounts its player or unlocks the next recording.
+      await setPlaybackAudioMode().catch(() => undefined);
       if (!alive.current) {
         onCreated(next);
         return;
@@ -157,13 +157,13 @@ export const VoiceInput = memo(function VoiceInput({
       setRevision((value) => value + 1);
       void startVoiceJob(next);
     } catch (error) {
+      await setPlaybackAudioMode().catch(() => undefined);
       if (alive.current) {
         setError(error instanceof Error ? error.message : '录音暂未保存，请重试。');
         transition('recover');
       }
     } finally {
       lock.current = false;
-      void setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
     }
   };
   latestFinish.current = () => void finish();
@@ -182,7 +182,7 @@ export const VoiceInput = memo(function VoiceInput({
     alive.current = true;
     return () => {
       alive.current = false;
-      void setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+      void setPlaybackAudioMode().catch(() => undefined);
     };
   }, []);
   const pause = () => {
