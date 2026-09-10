@@ -1,0 +1,61 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "317C5641-E235-4319-8ECA-FD139628CAAE",
+        "deviceName" : "MoodTracker-UI",
+        "modelName" : "iPhone 17 Pro",
+        "osBuildNumber" : "23C54",
+        "osVersion" : "26.2",
+        "platform" : "iOS Simulator"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 2,
+      "passedTests" : 1,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "MoodTrackerUI · Built with macOS 15.7.9",
+  "expectedFailures" : 0,
+  "failedTests" : 2,
+  "finishTime" : 1789024648.438,
+  "passedTests" : 1,
+  "result" : "Failed",
+  "skippedTests" : 0,
+  "startTime" : 1789023861.023,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+    {
+      "failureText" : "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - The focused note must stay visible above the footer when the keyboard opens",
+      "targetName" : "MoodTrackerUITests",
+      "testIdentifier" : 1,
+      "testIdentifierString" : "ComposerUITests/testDarkRecordFlow()",
+      "testIdentifierURL" : "test://com.apple.xcode/app/MoodTrackerUITests/ComposerUITests/testDarkRecordFlow",
+      "testName" : "testDarkRecordFlow()"
+    },
+    {
+      "failureText" : "XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - The focused note must stay visible above the footer when the keyboard opens",
+      "targetName" : "MoodTrackerUITests",
+      "testIdentifier" : 2,
+      "testIdentifierString" : "ComposerUITests/testLightRecordFlow()",
+      "testIdentifierURL" : "test://com.apple.xcode/app/MoodTrackerUITests/ComposerUITests/testLightRecordFlow",
+      "testName" : "testLightRecordFlow()"
+    }
+  ],
+  "title" : "Test - MoodTrackerUI",
+  "topInsights" : [
+    {
+      "category" : "Common Failures",
+      "impact" : "100% of failures",
+      "text" : "2 runs of 2 tests failed with XCTAssertEqual failed: (\"XCTWaiterResult(rawValue: 2)\") is not equal to (\"XCTWaiterResult(rawValue: 1)\") - The focused note must stay visible above the footer when the keyboard opens"
+    }
+  ],
+  "totalTestCount" : 3
+}

@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-09-10T07:47:44.891906+00:00",
+  "buildId": "f8757e73-8801-4c12-b9d6-f00fe9119fe6",
+  "version": "2.1.11",
+  "buildNumber": "17",
+  "processingState": "VALID",
+  "expired": false,
+  "uploadedDate": "2026-09-10T00:43:50-07:00",
+  "beta": {
+    "autoNotifyEnabled": true,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION"
+  },
+  "groups": [
+    {
+      "id": "c3a1a107-7438-48ac-802c-e9634d77ba5a",
+      "name": "个人测试组"
+    }
+  ]
+}

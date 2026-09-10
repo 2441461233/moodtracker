@@ -1,0 +1,59 @@
+{
+  "buildID": "45f6eae1-adbb-4b9d-99d0-179dcf36158d",
+  "sourceCommit": "9d2d5e4c95dc1391e2ec022701d64b00a6ed92b8",
+  "validatedAt": "2026-09-10T06:35:17.162747+00:00",
+  "ipaSHA256": "a300a73e9695546c5418ecbf46b0ba83d65591f75cbf25db67e8d48c61754ed4",
+  "bytes": 11975856,
+  "targets": [
+    {
+      "file": "app.app",
+      "name": "情绪像素",
+      "bundle": "com.zhenyu.moodjournal.app",
+      "version": "2.1.11",
+      "build": "17",
+      "sdk": "iphoneos26.2",
+      "minimumOS": "15.1",
+      "profileExpires": "2027-09-03T05:45:54",
+      "signature": "verified",
+      "certificateMatchesProfile": true,
+      "entitlements": {
+        "application-identifier": "9PB9F396XQ.com.zhenyu.moodjournal.app",
+        "beta-reports-active": true,
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.background-delivery": true,
+        "com.apple.developer.team-identifier": "9PB9F396XQ",
+        "com.apple.security.application-groups": [
+          "group.com.zhenyu.moodjournal.app.widgets"
+        ],
+        "get-task-allow": false
+      }
+    },
+    {
+      "file": "QuickRecordWidget.appex",
+      "name": "情绪像素小组件",
+      "bundle": "com.zhenyu.moodjournal.app.QuickRecordWidget",
+      "version": "2.1.11",
+      "build": "17",
+      "sdk": "iphoneos26.2",
+      "minimumOS": "15.1",
+      "profileExpires": "2027-09-03T05:45:54",
+      "signature": "verified",
+      "certificateMatchesProfile": true,
+      "entitlements": {
+        "application-identifier": "9PB9F396XQ.com.zhenyu.moodjournal.app.QuickRecordWidget",
+        "beta-reports-active": true,
+        "com.apple.developer.team-identifier": "9PB9F396XQ",
+        "com.apple.security.application-groups": [
+          "group.com.zhenyu.moodjournal.app.widgets"
+        ],
+        "get-task-allow": false
+      }
+    }
+  ],
+  "voice": {
+    "microphonePurpose": "用于记录你的心情语音。只有你点击录音时才使用麦克风，原声保存在本设备。",
+    "audioModuleInBinary": true,
+    "secureStoreModuleInBinary": true,
+    "backgroundAudio": false
+  }
+}

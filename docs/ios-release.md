@@ -1,6 +1,21 @@
-# iOS 2.1.10 发布与原生验收
+# iOS 2.1.11 发布与原生验收
 
-## 本次发布：2.1.10（16），语音记录与键盘修复已在原内部 TestFlight 可更新
+## 本次发布：2.1.11（17），录音回听生命周期修复
+
+2026-09-10：针对第三步结束录音后退出 App 的反馈，修复播放器释放后仍执行暂停，以及录音到回听的音频模式切换竞态。改为原声保留完成、播放模式切换结束后再展示回听；播放器创建失败可恢复，仍可保存与导出原声。详细证据及真机日志的限制见 [闪退排查](voice-stop-crash-2026-09-10.md)。
+
+- 正式应用源码 `9d2d5e4c95dc1391e2ec022701d64b00a6ed92b8`，版本 **2.1.11（17）**。[EAS 构建 45f6eae1](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/45f6eae1-adbb-4b9d-99d0-179dcf36158d) 于 **06:31:49.096 UTC** 完成为 `FINISHED`。后续主分支仅更改测试、服务和文档，未改变该包的生产应用代码。
+- 主 App / 小组件严格验签、描述文件证书匹配、应用组、版本与麦克风说明均通过校验；保留已确认的宫格微笑图标。SDK `iphoneos26.2`、最低 iOS 15.1、未开启后台音频。安装包 **11,975,856 字节**，SHA-256 `a300a73e9695546c5418ecbf46b0ba83d65591f75cbf25db67e8d48c61754ed4`。见 [包内校验](../artifacts/native-voice-2.1.11/ipa-validation.json)。
+- TypeScript、224 项应用测试、7 项服务测试、19 项网页检查与生产 Web 导出通过，共 250 项测试。播放器六项生命周期回归在旧版全部失败，在修复版全部通过。
+- [最终原生回归 34449531455](https://github.com/2441461233/moodtracker/actions/runs/34449531455) 于 **07:40:20 UTC** 成功：iPhone 17 Pro / iOS 26.2 模拟器的浅色、深色、实际录音暂停续录 / 结束 / 播放 / 切换文字 / 保存 / 再打开三条流程全部通过，0 失败、0 跳过。原生截图已人工复核输入框与保存按钮完整可见，见 [XCTest 摘要](../artifacts/native-voice-2.1.11/native-ui-summary.json)、[浅色键盘](../artifacts/native-voice-2.1.11/light-keyboard.png)、[深色键盘](../artifacts/native-voice-2.1.11/dark-keyboard.png)和 [保存后回听](../artifacts/native-voice-2.1.11/native-saved-recording.png)。
+- [网页部署 34449531412](https://github.com/2441461233/moodtracker/actions/runs/34449531412) 等待同一提交 `e3d03972eb70f71dad99b25e8675b99a5e7d07be` 的原生检查成功后，于 **07:40:42 UTC** 完成。线上版本 2.1.11，脚本 `index-361f4544358eb2a0f3794705f64fa9ef.js` 与本地导出逐字节一致，SHA-256 `b6790fb2514dc185780721784d017e0c01fd211a9be8813605bbf9b6a7b9703a`。
+- [EAS 上传 137819d0](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/137819d0-8cd5-440c-ad44-4b9a8fa07117) 于 **07:43:03.104 UTC** 为 `FINISHED`；独立读取确认关联版本、构建和源码精确匹配。复用 EAS 托管 API 密钥，无需用户填写专用密码。
+- **07:46 UTC，Apple 官方 API 确认 2.1.11（17）为 `VALID`、`IN_BETA_TESTING`、未过期，并已关联原「个人测试组」，自动通知保持开启。** ASC build `f8757e73-8801-4c12-b9d6-f00fe9119fe6`，见 [分发核验](../artifacts/native-voice-2.1.11/apple-distribution.json)。通过 **TestFlight → 情绪像素 → 更新** 覆盖安装，保留原 App / 组 / 测试员。
+- 中文测试说明已通过 Apple 官方 API 保存并回读核对一致，包含录音、暂停续录、结束、回听、切换文字、保存与重新打开的复测步骤；见 [测试说明](../artifacts/native-voice-2.1.11/testflight-notes.txt)。无需浏览器重新登录或重建凭据。
+- 真机反馈的 2.1.10（16）/ iOS 26.6.1 日志为 React 原生模块异常传播中的 `SIGABRT`，没有具体异常文本。旧版模拟器则复现了释放后调用暂停并退出；触发时机与最终崩溃签名不同，不能把它直接认定为用户那次闪退的唯一原因。新包仍需在用户 iPhone 上复测结束录音。
+- 云端转写部署文件与生产启动验证已完成，尚未取得线上主机 / HTTPS 地址及原开发机供应商 key；本次 App 更新不代表云端转写已接通。无签名模拟器的 SecureStore 读取失败路径已覆盖，真实签名包钥匙串和云端供应商调用仍待验收。
+
+## 上一版本：2.1.10（16），语音记录与键盘修复已在原内部 TestFlight 可更新
 
 2026-09-10：拉取用户的远端语音实现 `0f821a65b94f6f80cfd253f2e3ee0d6543f58cfb`，升级到 2.1.10，并修复人工截图复核发现的键盘遮挡正文问题。最终应用源码为 `aa004ea003c5d805254e0fb841f4123832a564b8`，继续发布到原 TestFlight「个人测试组」。
 

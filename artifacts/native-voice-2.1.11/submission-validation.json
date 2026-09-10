@@ -1,0 +1,13 @@
+{
+  "verifiedAt": "2026-09-10T07:43:25.254Z",
+  "id": "137819d0-8cd5-440c-ad44-4b9a8fa07117",
+  "status": "FINISHED",
+  "createdAt": "2026-09-10T07:42:50.850Z",
+  "completedAt": "2026-09-10T07:43:03.104Z",
+  "submittedBuild": {
+    "id": "45f6eae1-adbb-4b9d-99d0-179dcf36158d",
+    "appVersion": "2.1.11",
+    "appBuildVersion": "17",
+    "gitCommitHash": "9d2d5e4c95dc1391e2ec022701d64b00a6ed92b8"
+  }
+}
