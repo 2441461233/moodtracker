@@ -1,18 +1,37 @@
 # iOS 2.1.10 发布与原生验收
 
-## 本次发布：2.1.10，语音记录与键盘可见性修复，最终构建和分发待核实
+## 本次发布：2.1.10（16），语音记录与键盘修复已在原内部 TestFlight 可更新
+
+2026-09-10：拉取用户的远端语音实现 `0f821a65b94f6f80cfd253f2e3ee0d6543f58cfb`，升级到 2.1.10，并修复人工截图复核发现的键盘遮挡正文问题。最终应用源码为 `aa004ea003c5d805254e0fb841f4123832a564b8`，继续发布到原 TestFlight「个人测试组」。
+
+- 第三步默认语音，支持录音、暂停续录、本机保存、回听、单独导出和文字补充；配置独立服务后支持云端转写、AI 整理、识别原文保留与手动修改。
+- 键盘出现或弹层可视区改变后，以实际滚动视口定位正在编辑的输入框，避免被固定保存栏遮住；定位只操作滚动和 ref，不随键盘重绘整张表单。收键盘使用固定尺寸图标，修复原按钮截字。原生测试新增输入框完整位于滚动视口及保存按钮上方的断言。
+- 修复后 `npm run verify` 通过：TypeScript、216 项应用测试、5 项服务测试、19 项网页测试和 Web 导出，共 240 项。
+- [EAS 构建 9693a73a](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/9693a73a-d09a-42af-9abe-5c0e70b5ee21)于 **2026-09-10 02:59:07.564 UTC** 为 `FINISHED`，版本 **2.1.10（16）**、源码精确匹配上述提交。
+- 02:59:43 UTC 已核验此确切 IPA：主 App 与 `QuickRecordWidget.appex` 均通过严格验签，名称、版本 / build、Bundle ID / Team / App Group、profile 证书匹配；App Store 分发、`get-task-allow=false`。HealthKit / Background Delivery、URL scheme、加密声明保留；最低 iOS 15.1，SDK `iphoneos26.2`。
+- 已确认中文麦克风用途说明，主二进制包含 ExpoAudio / AudioModule、ExpoSecureStore / SecureStoreModule；没有后台音频模式。品牌图逐字节匹配已确认素材，桌面图标已解码查看。
+- 正式 IPA 为 **11,974,913 字节**，SHA-256：`cb14b5f9a7e6682fadf739656d581f2bb617429a712c0b75c0abd1b38dc63f41`。
+- 最终[原生验收 34431244763](https://github.com/2441461233/moodtracker/actions/runs/34431244763)于 **03:12:44 UTC** 成功：iPhone 17 Pro / iOS 26.2 模拟器运行 Release App，浅色和深色两条录入测试通过，0 失败、0 跳过。新增输入框处于实际视口和保存按钮上方的断言通过；原始截图已人工确认正文、保存按钮和收键盘按钮完整可见。见 [深色截图](../artifacts/native-voice-2.1.10/dark-keyboard-fixed.png)、[浅色截图](../artifacts/native-voice-2.1.10/light-keyboard-fixed.png)和 [XCTest 摘要](../artifacts/native-voice-2.1.10/native-ui-summary.json)。
+- [网页部署 34431244735](https://github.com/2441461233/moodtracker/actions/runs/34431244735)等待上述同一提交原生门槛后，于 **03:12:59 UTC** 成功。线上版本 2.1.10，脚本 `index-576bba0df5b4aed1d4af2cb134a428ab.js` 的 SHA-256 为 `0d03ab28e6074bfb6f04af7e1a38f4ae0a4d74114f2220c687d073f475f641ec`。
+- [EAS 上传 eb806f12](https://expo.dev/accounts/zhen2yu/projects/moodtracker/submissions/eb806f12-2d53-4551-87c2-846b395d8bf3)于 **03:16:12.353 UTC** 为 `FINISHED`；独立读取确认关联构建、版本 / build 和源码均精确匹配。复用现有 EAS 托管 API 密钥，无需专用密码。
+- **03:19 UTC，Apple 官方 API 确认 2.1.10（16）为 `VALID`、`IN_BETA_TESTING`，未过期，并关联原「个人测试组」，自动通知保持开启。** ASC build ID：`a8eff28a-7aa5-41a4-a962-74c3d0eda9af`。可通过 **TestFlight → 情绪像素 → 更新** 覆盖安装；未新增测试组或测试员。
+- 中文测试说明已整理为 [测试说明文件](../artifacts/native-voice-2.1.10/testflight-notes.txt)，**未保存到 Apple 后台**：官方 API 写入返回 HTTP 405，浏览器登录已过期。构建分发已经通过官方 API 独立核实，测试说明保存失败不影响现有内部组安装；没有重复上传或要求重新创建凭据。
+- **云端转写后端尚未接通确认。** 原开发电脑的 `server/.env` 没有同步到这台发布电脑，当前也未取得已部署 HTTPS 地址；录音功能发布不代表云端转写已可用。服务配置入口及边界见 [语音说明](voice-recording.md)。
+- 真实麦克风采集、真机回听、云端转写及 iPhone 实际键盘流畅度尚待测试；不以模拟器文字流程或包内模块存在代替这些验收。
+
+### 候选 2.1.10（15）记录：未上传 TestFlight
 
 2026-09-10：按用户要求拉取远端语音实现 `0f821a65b94f6f80cfd253f2e3ee0d6543f58cfb`，将版本更新为 2.1.10，继续发布到原 TestFlight「个人测试组」。
 
 - **候选 2.1.10（15）未上传。** 自动保存流程虽通过，但人工复核原生截图发现键盘打开后正文输入框被上方内容挤出可视区。已增加键盘显示 / 可视区变化后的焦点输入框滚动定位，避免额外表单重绘；收键盘使用固定尺寸图标，修复文字截断。原生回归新增输入框完整处于滚动视口及保存按钮上方的断言。以下候选（15）的验签和 CI 证据不能代替修复后构建的验证。
 - 第三步默认语音，支持录音、暂停续录、原声本机保存、回听、单独导出和文字补充；配置服务后可上传转写、AI 整理、保留识别原文并手动修改。加入 ExpoAudio / ExpoSecureStore 和麦克风用途说明，需要完整原生包。
 - `npm ci` 和 `npm run verify` 已通过：216 项应用测试、5 项服务测试、19 项网页测试，共 240 项，以及 TypeScript 与 Web 导出。
-- 候选（15）的源码为 `88c6a91e75255d81dbb00fbf47c1fe37de4a5aa0`，版本号由 app.json 统一显示。原语音实现的[原生检查 34364619184](https://github.com/2441461233/moodtracker/actions/runs/34364619184)已成功；本次发布提交的原生运行门槛已通过，上传和分发仍待核实。
+- 候选（15）的源码为 `88c6a91e75255d81dbb00fbf47c1fe37de4a5aa0`，版本号由 app.json 统一显示。原语音实现的[原生检查 34364619184](https://github.com/2441461233/moodtracker/actions/runs/34364619184)已成功；候选提交的原生运行门槛已通过，但因人工截图发现问题未上传。
 - [EAS 构建 81ba84ac](https://expo.dev/accounts/zhen2yu/projects/moodtracker/builds/81ba84ac-c1ec-4a24-953a-9f7294607871)为 `FINISHED`，于 **2026-09-10 02:33:50.040 UTC** 完成，版本 **2.1.10（15）**，源码精确匹配上述提交。
 - 02:35:22 UTC 已核验实际 IPA：主 App 和 `QuickRecordWidget.appex` 均通过严格验签；版本、名称、Bundle ID / Team / App Group、证书与 profile 匹配，App Store 分发、`get-task-allow=false`；HealthKit / Background Delivery、URL scheme、加密声明保留。最低 iOS 15.1，SDK `iphoneos26.2`，满足本轮核对的 [Apple SDK 26 最低要求](https://developer.apple.com/news/upcoming-requirements/?id=02032026a)。
 - 包内具有中文 `NSMicrophoneUsageDescription`，主二进制包含 ExpoAudio / AudioModule 及 ExpoSecureStore / SecureStoreModule；未开启后台音频模式。品牌图与已确认素材逐字节一致，桌面图标已解码查看。
 - IPA 为 **11,974,396 字节**，SHA-256：`5473ce92b3035c2ed33366b51fb2595a1b4bb4429e7408cb58757cd5b08e4ef6`。
-- [发布提交原生检查 34429611522](https://github.com/2441461233/moodtracker/actions/runs/34429611522)于 **02:47:13 UTC** 成功，编译并运行 iOS 模拟器 Release App。原生报告与关键截图复核待归档。
+- [发布提交原生检查 34429611522](https://github.com/2441461233/moodtracker/actions/runs/34429611522)于 **02:47:13 UTC** 成功，编译并运行 iOS 模拟器 Release App。报告为两条流程通过，但人工截图复核发现正文不可见，见 [候选截图](../artifacts/native-voice-2.1.10/candidate-15-keyboard.png)。
 - [网页部署 34429611501](https://github.com/2441461233/moodtracker/actions/runs/34429611501)等待同一提交的原生门槛后，于 **02:47:41 UTC** 成功。线上脚本确认为 2.1.10，PWA 图标和 favicon 与本地导出逐字节一致。
 - **转写后端尚未完成本次线上配置确认。** 文档中的开发机 `server/.env` 不在当前机器，GitHub Secrets 也没有这份配置；尚未取得已部署的 HTTPS 服务地址。录音 / 回听与独立后端分开验证，不能把 App 发布称为云端转写已经接通。详情见 [语音记录说明](voice-recording.md)。
 - iOS 模拟器流程覆盖默认语音入口、文字输入、键盘与保存，不等于已验证真实麦克风、真机回听或云端转写。
@@ -232,9 +251,9 @@ eas submit --platform ios --profile production --id "$VERIFIED_EAS_BUILD_ID" --n
 
 simulator / production 均固定 Node.js `22.23.1` 与 EAS 镜像 `macos-sequoia-15.6-xcode-26.2`，不使用 `latest` 镜像别名。上传前仍须核实符合 Apple 当时的 SDK 最低要求。EAS 设置 `MOODTRACKER_BUILD_TARGET=native`，`app.config.js` 仅在原生构建时强制空 base URL，避免携带 GitHub Pages 的 `/moodtracker/` 子路径；不向 EAS 传入空环境变量值。
 
-EAS Submit 只负责上传二进制。每次上传后都需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，并确认既有内部 TestFlight 组的可用性。当前 2.1.7（11）及历史版本均已分别核实内部 TestFlight 可用；不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
+EAS Submit 只负责上传二进制。每次上传后都需等待 Apple 处理，在 App Store Connect 核对版本 / build / 状态，并确认既有内部 TestFlight 组的可用性。当前 2.1.10（16）及历史版本均已分别核实内部 TestFlight 可用；不得把构建队列、上传完成、Apple 处理完毕、TestFlight 可安装、App Store 正式审核通过混称为“已上线”。
 
-已设置 `ios.config.usesNonExemptEncryption=false`，2.1.0（4）至当前 2.1.4（8）的最终签名 IPA 均已核实 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
+已设置 `ios.config.usesNonExemptEncryption=false`，2.1.0（4）至当前 2.1.10（16）的已发布签名 IPA 均已核实 Info.plist 中 `ITSAppUsesNonExemptEncryption` 为布尔 `false`。[Expo 官方配置说明](https://docs.expo.dev/versions/latest/config/app/#usesnonexemptencryption)
 
 当前代码与锁定依赖未发现自定义加密、VPN 或非系统加密实现。Expo 的摘要计算使用 Apple CryptoKit，网络使用系统 URLSession；MoodHealth 使用系统 HealthKit。Apple 明确说明，仅使用 Apple 操作系统提供的加密时，无需向 App Store Connect 上传加密文档；无加密或仅使用豁免加密可将该键设为 `NO`。这不是“完全没有加密”或免除所有出口合规义务的声明；依赖、加密功能或分发要求变化时必须重新核对。[Apple 文档要求](https://developer.apple.com/help/app-store-connect/reference/app-information/export-compliance-documentation-for-encryption)、[Apple 声明规则](https://developer.apple.com/documentation/security/complying-with-encryption-export-regulations)
 
@@ -264,7 +283,7 @@ App Store 正式发布还需要元数据、截图、隐私信息、审核和分�
 18. 验证每日整体心情优先规则、当下情绪回退规则、`valence × 2 + 3` 的近似色彩与期间日等权；Apple 原始愉悦度不可被该映射覆盖或回写。
 19. Apple 健康回顾的两种 kind 分别计算原始样本均值；本地趋势、分布和活动关联不因 Apple 样本加入而变化。365 天 / 5,000 条边界、读取中、权限未知和读取失败均不谎报全量或确定空白。
 
-当前 2.1.4（8）已核实在原内部测试组「正在测试」，测试员页面显示已安装。更新通过 **TestFlight → 情绪记录 → 更新**，不要卸载旧 App。已开启自动同步者继续沿用连接；从未开启者才需要一次明确开启和系统授权。之后前台响应变化、回到 App 自动补齐，后台和彻底关闭后的时效仍受 iOS 限制。安装新构建不会使旧的过期 build 自行续期。
+当前 2.1.10（16）已核实在原内部测试组「正在测试」；真实设备安装状态未验证。更新通过 **TestFlight → 情绪像素 → 更新**，不要卸载旧 App。已开启自动同步者继续沿用连接；从未开启者才需要一次明确开启和系统授权。之后前台响应变化、回到 App 自动补齐，后台和彻底关闭后的时效仍受 iOS 限制。安装新构建不会使旧的过期 build 自行续期。
 
 ## 官方参考
 

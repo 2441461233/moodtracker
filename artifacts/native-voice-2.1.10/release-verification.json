@@ -1,0 +1,52 @@
+{
+  "version": "2.1.10",
+  "build": "16",
+  "sourceCommit": "aa004ea003c5d805254e0fb841f4123832a564b8",
+  "easSubmission": {
+    "id": "eb806f12-2d53-4551-87c2-846b395d8bf3",
+    "status": "FINISHED",
+    "createdAt": "2026-09-10T03:16:01.815Z",
+    "completedAt": "2026-09-10T03:16:12.353Z",
+    "build": {
+      "id": "9693a73a-d09a-42af-9abe-5c0e70b5ee21",
+      "appVersion": "2.1.10",
+      "appBuildVersion": "16",
+      "gitCommitHash": "aa004ea003c5d805254e0fb841f4123832a564b8"
+    }
+  },
+  "apple": {
+    "verifiedAt": "2026-09-10T03:19:00Z",
+    "buildId": "a8eff28a-7aa5-41a4-a962-74c3d0eda9af",
+    "processingState": "VALID",
+    "expired": false,
+    "internalBuildState": "IN_BETA_TESTING",
+    "autoNotifyEnabled": true,
+    "groups": [
+      {
+        "id": "c3a1a107-7438-48ac-802c-e9634d77ba5a",
+        "name": "个人测试组"
+      }
+    ]
+  },
+  "web": {
+    "webVersion": "2.1.10",
+    "sourceCommit": "aa004ea003c5d805254e0fb841f4123832a564b8",
+    "bundle": "/moodtracker/_expo/static/js/web/index-576bba0df5b4aed1d4af2cb134a428ab.js",
+    "bundleSHA256": "0d03ab28e6074bfb6f04af7e1a38f4ae0a4d74114f2220c687d073f475f641ec"
+  },
+  "checks": {
+    "appTests": 216,
+    "serverTests": 5,
+    "webTests": 19,
+    "nativeUITests": 2,
+    "nativeUIFailures": 0,
+    "nativeUISkipped": 0,
+    "nativeRunId": "34431244763",
+    "webRunId": "34431244735"
+  },
+  "limits": [
+    "Cloud transcription backend not connected in this release",
+    "Real microphone capture, physical-device playback and voice API not retested",
+    "Chinese TestFlight notes prepared locally; Apple API write returned HTTP 405 and browser session was expired"
+  ]
+}

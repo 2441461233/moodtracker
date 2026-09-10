@@ -2,7 +2,7 @@
 
 一个温柔、私密、无需注册的心情空间。保留 Expo / React Native 原生项目，支持 iOS、Android 和响应式网页。
 
-**2.1.10 正在发布：语音记录**：第三步默认录音，支持暂停、回听和云端 AI 转写，整理后的正文默认展示，原声保存在本机。含键盘弹层布局调整；正式包、发布提交的原生门槛和 TestFlight 分发待核实。自动转写还需独立配置 HTTPS 后端；当前发布机器没有后端凭据或已部署地址。后端配置、音频备份边界与验证见 [语音记录说明](docs/voice-recording.md)。
+**2.1.10（16）已可更新（2026-09-10）**：新增语音记录、暂停续录、原声回听与导出，并修复键盘出现后正文输入框被遮挡的问题。240 项回归与 iOS 模拟器浅色 / 深色录入测试通过，原生截图已人工复核；网页版已部署，Apple 已确认原 TestFlight「个人测试组」为「正在测试」。**云端 AI 转写尚未接通**：当前发布电脑未找到原开发机的后端配置，也没有已部署的 HTTPS 服务地址；App 更新不会自动带入这些配置。真实麦克风采集与回听仍待真机验收。见 [语音记录说明](docs/voice-recording.md)和 [发布证据](docs/ios-release.md)。
 
 **2.1.9（14）已可更新（2026-09-09）**：修复 iPhone 上继续 / 保存按钮渐变截断及文字遮挡，保留上一版的输入与切步性能优化。226 项回归及 iOS 模拟器浅色 / 深色完整录入测试通过，关键原生截图已人工复核；网页版已部署，Apple 已确认原 TestFlight「个人测试组」为「正在测试」。详见 [按钮修复与原生截图](docs/native-button-regression-2026-09-09.md)和 [发布证据](docs/ios-release.md)。
 
@@ -55,7 +55,7 @@ npm run android
 
 普通日记可在与 SDK 54 兼容的 Expo Go 中预览；Apple 健康需要包含本地 Swift 模块的完整原生包，不能通过 Expo Go 或 JS 更新获得。项目已配置现有 iOS App 的 Bundle ID、HealthKit 用途说明与 EAS 构建 / 提交 profile，并完成 [@zhen2yu/moodtracker 项目绑定](https://expo.dev/accounts/zhen2yu/projects/moodtracker)。
 
-当前 **2.1.9（14）已在既有内部 TestFlight 测试组可用**。通过 **TestFlight → 情绪像素 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
+当前 **2.1.10（16）已在既有内部 TestFlight 测试组可用**。通过 **TestFlight → 情绪像素 → 更新** 覆盖安装，不要卸载旧 App。已开启的健康同步连接与系统权限沿用；只有尚未开启者才走 **我的 → 连接 Apple 健康 → 开启自动同步**。原生编译、签名和分发不能替代真实 iPhone 验收。精确状态及历史证据见 [iOS 发布说明](docs/ios-release.md)。
 
 生产构建及本地验收：
 
