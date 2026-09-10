@@ -69,6 +69,12 @@ export function createTranscriptionHandler({
     .map((s) => s.trim());
   return async function handler(request) {
     const path = new URL(request.url).pathname;
+    // Deployment probes only report local configuration readiness. They never
+    // call a paid provider or expose keys, audio or transcripts.
+    if (path === '/health' && request.method === 'GET') {
+      const ready = !!env.SILICONFLOW_API_KEY && (env.VOICE_ACCESS_TOKEN?.length ?? 0) >= 24;
+      return json(ready ? 200 : 503, { status: ready ? 'ready' : 'not_configured' });
+    }
     const origin = request.headers.get('origin');
     const cors =
       origin && allowedOrigins.includes(origin)

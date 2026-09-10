@@ -21,6 +21,20 @@ function request(options = {}) {
   });
 }
 const response = (value) => new Response(JSON.stringify(value));
+test('deployment health reports missing configuration without provider calls or secrets', async () => {
+  for (const configured of [false, true]) {
+    const handler = createTranscriptionHandler({
+      env: configured ? env : {},
+      fetchImpl: () => {
+        throw new Error('health probe must not call provider');
+      },
+    });
+    const result = await handler(new Request('https://service.example.com/health'));
+    assert.equal(result.status, configured ? 200 : 503);
+    assert.equal(result.headers.get('Cache-Control'), 'no-store');
+    assert.deepEqual(await result.json(), { status: configured ? 'ready' : 'not_configured' });
+  }
+});
 test('auth, CORS, missing configuration and invalid audio never call provider', async () => {
   const handler = createTranscriptionHandler({
     env,

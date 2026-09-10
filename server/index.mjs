@@ -30,6 +30,8 @@ const server = createServer(async (req, res) => {
 });
 server.requestTimeout = 155000;
 server.headersTimeout = 15000;
-server.listen(port, host, () =>
-  console.log(`Voice service: http://${host}:${port} (audio and transcripts are not logged)`),
-);
+server.listen(port, host, () => {
+  const address = server.address();
+  const boundPort = typeof address === 'object' && address ? address.port : port;
+  console.log(`Voice service: http://${host}:${boundPort} (audio and transcripts are not logged)`);
+});
