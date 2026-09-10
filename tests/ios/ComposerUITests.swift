@@ -117,7 +117,11 @@ final class ComposerUITests: XCTestCase {
     }
     let stop = element("voice-stop")
     XCTAssertTrue(stop.waitForExistence(timeout: 10), "Recorder did not start")
-    XCTAssertTrue(element("00:02").waitForExistence(timeout: 8), "Native recorder clock did not advance")
+    // Permission/element waits can finish after 00:02 has already passed. The
+    // native hierarchy must show at least two seconds, not one exact instant.
+    let advancedClock = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@",
+      "^(00:(0[2-9]|[1-5][0-9])|0[1-4]:[0-5][0-9]|05:00)$")).firstMatch
+    XCTAssertTrue(advancedClock.waitForExistence(timeout: 8), "Native recorder clock did not advance")
     element("voice-pause").tap()
     XCTAssertTrue(element("已暂停，可以继续说").waitForExistence(timeout: 3))
     element("voice-pause").tap()
